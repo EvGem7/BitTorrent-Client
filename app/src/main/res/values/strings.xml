@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">BitTorrent Client</string>
+    <string name="torrents">Torrents</string>
+    <string name="downloading">Downloading</string>
+    <string name="seeding">Seeding</string>
+    <string name="completed">Completed</string>
+    <string name="active">Active</string>
+    <string name="inactive">Inactive</string>
+    <string name="settings">Settings</string>
+</resources>
