@@ -7,10 +7,8 @@ import android.view.View
 import android.view.ViewGroup
 import org.evgem.android.bittorrentclient.R
 
-class LoadingsFragment : Fragment() {
+class NavigationFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        println("///////////////////////////////////////////////////////////////////////////////////////////////// ")
-
-        return inflater.inflate(R.layout.fragment_loadings, container, false)
+        return inflater.inflate(R.layout.fragment_navigation, container, false)
     }
 }

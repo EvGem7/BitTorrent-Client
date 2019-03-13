@@ -1,10 +1,11 @@
 package org.evgem.android.bittorrentclient.ui.activity
 
+import android.databinding.DataBindingUtil
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v7.app.AppCompatActivity
 import org.evgem.android.bittorrentclient.R
-import org.evgem.android.bittorrentclient.ui.fragment.LoadingsFragment
+import org.evgem.android.bittorrentclient.ui.fragment.loadings.LoadingsFragment
 import org.evgem.android.bittorrentclient.util.transaction
 
 /**
@@ -17,7 +18,9 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         if (savedInstanceState == null) {
             supportFragmentManager.transaction {
-                add(R.id.main_fragment_container, LoadingsFragment())
+                add(R.id.main_fragment_container,
+                    LoadingsFragment()
+                )
             }
         }
     }

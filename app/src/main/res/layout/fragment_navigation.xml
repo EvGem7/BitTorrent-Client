@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:layout_editor_absoluteY="25dp">
+
+    <ScrollView xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toTopOf="@+id/view"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:id="@+id/linearLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="64dp"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.56">
+
+            <Button
+                style="@style/NavItem"
+                android:text="@string/torrents" />
+
+            <Button
+                style="@style/NavSubItem"
+                android:drawableLeft="@drawable/ic_arrow_down"
+                android:text="@string/downloading" />
+
+            <Button
+                style="@style/NavSubItem"
+                android:drawableLeft="@drawable/ic_arrow_up"
+                android:text="@string/seeding" />
+
+            <Button
+                style="@style/NavSubItem"
+                android:drawableLeft="@drawable/ic_completed"
+                android:text="@string/completed" />
+
+            <Button
+                style="@style/NavSubItem"
+                android:drawableLeft="@drawable/ic_resume"
+                android:text="@string/active" />
+
+            <Button
+                style="@style/NavSubItem"
+                android:drawableLeft="@drawable/ic_pause"
+                android:text="@string/inactive" />
+        </LinearLayout>
+    </ScrollView>
+
+    <View
+        android:id="@+id/view"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/dividerColor"
+        app:layout_constraintBottom_toTopOf="@+id/nav_night_mode" />
+
+
+    <Button
+        android:id="@+id/button"
+        style="@style/NavItem"
+        android:layout_width="0dp"
+        android:drawableLeft="@drawable/ic_settings"
+        android:text="@string/settings"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/nav_night_mode"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/view" />
+
+    <ImageButton
+        android:id="@+id/nav_night_mode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="?selectableItemBackground"
+        android:padding="16dp"
+        android:src="@drawable/ic_moon"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+
+</android.support.constraint.ConstraintLayout>
+
