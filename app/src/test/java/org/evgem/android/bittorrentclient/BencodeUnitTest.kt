@@ -1,6 +1,8 @@
 package org.evgem.android.bittorrentclient
 
 import org.evgem.android.bittorrentclient.data.bencode.*
+import org.evgem.android.bittorrentclient.data.entity.TrackerRequest
+import org.evgem.android.bittorrentclient.data.network.Tracker
 import org.evgem.android.bittorrentclient.data.network.httpRequest
 import org.junit.Assert.assertEquals
 import org.junit.Ignore
@@ -42,6 +44,8 @@ class BencodeUnitTest {
     @Test
     @Ignore
     fun debug() {
+
+
 //        Socket("retracker.local", 80).use {
 //            val writer = it.getOutputStream().bufferedWriter()
 //            writer.write("GET /announce HTTP/1.1\r\n")
@@ -61,8 +65,8 @@ class BencodeUnitTest {
             val metainfo = BDecoder.decode(it) as BMap
             val info = metainfo.value["info"] as BMap
             val piecesSize = (info.value["pieces"] as BString).value.size
-//            val pieceSize = (info.value["piece length"] as BInteger).value
-            val torrentSize = (piecesSize / 20).toString().toByteArray()
+            val pieceSize = (info.value["piece length"] as BInteger).value
+            val torrentSize = piecesSize / 20 * pieceSize
 
             val infoEncoded = ByteArrayOutputStream()
             BEncoder.encode(info, infoEncoded)
@@ -70,24 +74,31 @@ class BencodeUnitTest {
             val messageDigest = MessageDigest.getInstance("SHA-1")
             val hashInfo = messageDigest.digest(infoEncoded.toByteArray())
 
-            val result = httpRequest(
-                "http://bt4.t-ru.org/ann",
-                "info_hash" to hashInfo,
-                "peer_id" to "1234567890poiuytrewq".toByteArray(),
-                "port" to "51413".toByteArray(),
-                "numwant" to "0".toByteArray(),
-                "downloaded" to "0".toByteArray(),
-                "uploaded" to "0".toByteArray(),
-                "left" to 11574673001.toString().toByteArray(),
-                "event" to "stopped".toByteArray(),
-                "compact" to "1".toByteArray(),
-                "key" to "ohuenny_key".toByteArray()
-            )
-            result?.let {
-                println(String(result))
+            Tracker("http://bt4.t-ru.org/ann").let {
+                val response = it.sendRequest(TrackerRequest(
+                    hashInfo,
+                    "1234567890poiuytrewq".toByteArray(),
+                    15000,
+                    0,
+                    0,
+                    torrentSize
+                ))
             }
+
+//            val result = httpRequest(
+//                "http://bt4.t-ru.org/ann",
+//                "info_hash" to hashInfo,
+//                "peer_id" to "1234567890poiuytrewq".toByteArray(),
+//                "port" to "51413".toByteArray(),
+//                "downloaded" to "0".toByteArray(),
+//                "uploaded" to "0".toByteArray(),
+//                "left" to 11574673001.toString().toByteArray(),
+//                "event" to "stopped".toByteArray(),
+//                "compact" to "1".toByteArray()
+//            )
+//            result?.let {
+//                println(String(result))
+//            }
         }
-
-
     }
 }

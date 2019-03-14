@@ -3,14 +3,27 @@ package org.evgem.android.bittorrentclient.data.network
 import android.util.Log
 import java.net.Socket
 import java.net.URL
-import java.net.URLEncoder
 
 private const val HTTP_PORT = 80
 private const val TAG = "HttpRequest"
 private const val SUCCESS_PREFIX = "HTTP/1.1 2" //2xx - success codes
 private val CONTENT_LENGTH_REGEX = """Content-Length: (\d+)""".toRegex()
 
-fun httpRequest(url: String, vararg params: Pair<String, ByteArray>): ByteArray? {
+private const val USER_AGENT = "Android BitTorrent Client"
+private const val ACCEPT_ENCODING = "gzip;q=1.0, deflate, identity"
+private const val ACCEPT = "*/*"
+private const val CONNECTION = "close"
+
+fun httpRequest(url: String, vararg params: Pair<String, ByteArray>): ByteArray? = httpRequest(
+    url,
+    ArrayList<Pair<String, ByteArray>>().apply {
+        for (param in params) {
+            add(param)
+        }
+    }
+)
+
+fun httpRequest(url: String, params: List<Pair<String, ByteArray>>): ByteArray? {
     val host: String
     val path: String
     URL(url).let {
@@ -21,11 +34,12 @@ fun httpRequest(url: String, vararg params: Pair<String, ByteArray>): ByteArray?
         host = it.host
         path = it.path
     }
-    val request = "GET $path?${parseParams(*params)} HTTP/1.1\r\n" +
+    val request = "GET $path?${encodeParams(params)} HTTP/1.1\r\n" +
             "Host: $host\r\n" +
-            "User-Agent: BitTorrentClient" +
-//            "Connection: close\r\n" +
-            "Accept: */*\r\n" +
+            "User-Agent: $USER_AGENT\r\n" +
+            "Accept-Encoding: $ACCEPT_ENCODING\r\n" +
+            "Accept: $ACCEPT\r\n" +
+            "Connection: $CONNECTION\r\n" +
             "\r\n"
     Socket(host, HTTP_PORT).use { socket ->
         val writer = socket.getOutputStream().bufferedWriter()
@@ -43,7 +57,7 @@ fun httpRequest(url: String, vararg params: Pair<String, ByteArray>): ByteArray?
                 c = input.read()
                 headerBuilder.append(c.toChar())
                 if (c == '\r'.toInt()) {
-                    headerBuilder.append(c.toChar()) //append '\n' again
+                    headerBuilder.append(input.read().toChar()) //append '\n' again
                     break //we have "\r\n\r\n"
                 }
             }
@@ -72,7 +86,7 @@ fun httpRequest(url: String, vararg params: Pair<String, ByteArray>): ByteArray?
     }
 }
 
-private fun parseParams(vararg params: Pair<String, ByteArray>): String {
+private fun encodeParams(params: List<Pair<String, ByteArray>>): String {
     val builder = StringBuilder()
     for ((key, value) in params) {
         builder.append(key)
