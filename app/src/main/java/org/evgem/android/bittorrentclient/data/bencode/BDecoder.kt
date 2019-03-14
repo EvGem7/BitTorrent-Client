@@ -2,8 +2,6 @@ package org.evgem.android.bittorrentclient.data.bencode
 
 import org.evgem.android.bittorrentclient.exception.BEncodeException
 import java.io.EOFException
-import java.io.File
-import java.io.FileInputStream
 import java.io.InputStream
 
 class BDecoder(private val input: InputStream) {
@@ -32,14 +30,14 @@ class BDecoder(private val input: InputStream) {
     }
 
     private fun decodeMap(): BMap {
-        val result = HashMap<String, BValue>()
+        val result = LinkedHashMap<String, BValue>()
         var c = input.readChar()
         while (c != 'e') {
             if (c !in '0'..'9') {
                 throw BEncodeException("Error while decoding dictionary. Key must be string")
             }
-//            val key = String(decodeString(c).value)
-            val key = decodeString(c).value
+            val key = String(decodeString(c).value)
+//            val key = decodeString(c).value
             result[key] = decode()
             c = input.readChar()
         }
@@ -92,11 +90,15 @@ class BDecoder(private val input: InputStream) {
         while (read < size) {
             read += input.read(buffer, read, size - read).let { if (it != -1) it else throw EOFException() }
         }
-
-        return BString(String(buffer))
+        return BString(buffer)
+//        return BString(String(buffer))
     }
 
     private fun InputStream.readChar() = read().toChar()
 
     private val Char.number: Int get() = (this - '0')
+
+    companion object {
+        fun decode(input: InputStream): BValue = BDecoder(input).decode()
+    }
 }
