@@ -13,7 +13,7 @@ import java.net.InetAddress
 import java.net.UnknownHostException
 import java.util.*
 
-class Tracker(private val announceUrl: String) {
+class TrackerCommunicator(private val announceUrl: String) {
     fun sendRequest(request: TrackerRequest): TrackerResponse? {
         val params = ArrayList<Pair<String, ByteArray>>().apply {
             add("info_hash" to request.infoHash)
@@ -77,13 +77,12 @@ class Tracker(private val announceUrl: String) {
 
                         val port = (peerMap.value["port"] as? BInteger) ?: continue
 
-                        result.add(
-                            Peer(
-                                peerId?.value,
-                                ip,
-                                port.value.toInt()
-                            )
+                        val peer = Peer(
+                            peerId?.value,
+                            ip,
+                            port.value.toInt()
                         )
+                        result.add(peer)
                     } else {
                         Log.d(TAG, "Error. Peer has wrong type")
                     }
@@ -92,11 +91,9 @@ class Tracker(private val announceUrl: String) {
             }
             is BString -> if (peersData.value.size % PEER_RAW_SIZE == 0) {
                 val result = ArrayList<Peer>()
-                for (i in 0 until (peersData.value.size / PEER_RAW_SIZE)) {
-                    val start = i * PEER_RAW_SIZE
-                    val peerData = peersData.value.sliceArray(start until start + PEER_RAW_SIZE)
-                    val ipData = peerData.sliceArray(0 until IP_RAW_SIZE)
-                    val portData = peerData.sliceArray(PORT_OFFSET until PORT_OFFSET + PORT_RAW_SIZE)
+                for (i in 0 until peersData.value.size step PEER_RAW_SIZE) {
+                    val ipData = peersData.value.sliceArray(i until i + IP_RAW_SIZE)
+                    val portData = peersData.value.sliceArray(i + PORT_OFFSET until i + PORT_OFFSET + PORT_RAW_SIZE)
 
                     val ip: InetAddress
                     try {
@@ -134,7 +131,7 @@ class Tracker(private val announceUrl: String) {
     }
 
     companion object {
-        private val TAG = Tracker::class.java.simpleName
+        private val TAG = TrackerCommunicator::class.java.simpleName
         private const val PEER_RAW_SIZE = 6
         private const val IP_RAW_SIZE = 4
         private val PORT_OFFSET get() = IP_RAW_SIZE

@@ -2,14 +2,13 @@ package org.evgem.android.bittorrentclient
 
 import org.evgem.android.bittorrentclient.data.bencode.*
 import org.evgem.android.bittorrentclient.data.entity.TrackerRequest
-import org.evgem.android.bittorrentclient.data.network.Tracker
-import org.evgem.android.bittorrentclient.data.network.httpRequest
+import org.evgem.android.bittorrentclient.data.network.TrackerCommunicator
 import org.junit.Assert.assertEquals
 import org.junit.Ignore
 import org.junit.Test
 import java.io.*
-
 import java.net.Socket
+
 import java.security.MessageDigest
 
 /**
@@ -44,7 +43,8 @@ class BencodeUnitTest {
     @Test
     @Ignore
     fun debug() {
-
+        val a = Socket("rutracker.org", 79)
+        println(a)
 
 //        Socket("retracker.local", 80).use {
 //            val writer = it.getOutputStream().bufferedWriter()
@@ -60,30 +60,31 @@ class BencodeUnitTest {
 //            reader.close()
 ////            writer.write("Accept:")
 //        }
-        val file = File("/home/evgem/Downloads/test.torrent")
-        FileInputStream(file).use {
-            val metainfo = BDecoder.decode(it) as BMap
-            val info = metainfo.value["info"] as BMap
-            val piecesSize = (info.value["pieces"] as BString).value.size
-            val pieceSize = (info.value["piece length"] as BInteger).value
-            val torrentSize = piecesSize / 20 * pieceSize
-
-            val infoEncoded = ByteArrayOutputStream()
-            BEncoder.encode(info, infoEncoded)
-
-            val messageDigest = MessageDigest.getInstance("SHA-1")
-            val hashInfo = messageDigest.digest(infoEncoded.toByteArray())
-
-            Tracker("http://bt4.t-ru.org/ann").let {
-                val response = it.sendRequest(TrackerRequest(
-                    hashInfo,
-                    "1234567890poiuytrewq".toByteArray(),
-                    15000,
-                    0,
-                    0,
-                    torrentSize
-                ))
-            }
+//        val file = File("/home/evgem/Downloads/test.torrent")
+//        FileInputStream(file).use {
+//            val metainfo = BDecoder.decode(it) as BMap
+//            val info = metainfo.value["info"] as BMap
+//            val piecesSize = (info.value["pieces"] as BString).value.size
+//            val pieceSize = (info.value["piece length"] as BInteger).value
+//            val torrentSize = piecesSize / 20 * pieceSize
+//
+//            val infoEncoded = ByteArrayOutputStream()
+//            BEncoder.encode(info, infoEncoded)
+//
+//            val messageDigest = MessageDigest.getInstance("SHA-1")
+//            val hashInfo = messageDigest.digest(infoEncoded.toByteArray())
+//
+//            TrackerCommunicator("http://bt4.t-ru.org/ann").let {
+//                val response = it.sendRequest(TrackerRequest(
+//                    hashInfo,
+//                    "1234567890poiuytrewq".toByteArray(),
+//                    15000,
+//                    0,
+//                    0,
+//                    torrentSize
+//                ))
+//                println(response)
+//            }
 
 //            val result = httpRequest(
 //                "http://bt4.t-ru.org/ann",
@@ -99,6 +100,6 @@ class BencodeUnitTest {
 //            result?.let {
 //                println(String(result))
 //            }
-        }
+//        }
     }
 }
