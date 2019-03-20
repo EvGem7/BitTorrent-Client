@@ -8,6 +8,7 @@ import org.junit.Ignore
 import org.junit.Test
 import java.io.*
 import java.net.Socket
+import java.nio.ByteBuffer
 
 import java.security.MessageDigest
 
@@ -43,8 +44,11 @@ class BencodeUnitTest {
     @Test
     @Ignore
     fun debug() {
-        val a = Socket("rutracker.org", 79)
-        println(a)
+        val ms = ByteArray(4) { it.toByte() }
+        val bb = ByteBuffer.wrap(ms)
+        println(bb.int)
+        ms[0] = 140.toByte()
+        println(ByteBuffer.wrap(ms).int)
 
 //        Socket("retracker.local", 80).use {
 //            val writer = it.getOutputStream().bufferedWriter()
