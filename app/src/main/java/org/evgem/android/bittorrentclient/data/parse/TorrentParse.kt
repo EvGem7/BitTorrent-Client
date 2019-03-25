@@ -14,7 +14,7 @@ fun getTorrentInfo(root: BMap): TorrentInfo? {
     val announces = HashSet<String>()
     root.value["announce"]?.string?.let {
         announces.add(String(it))
-    }
+    } ?: return null
     root.value["announce-list"]?.list?.let { outerList ->
         for (list in outerList) {
             for (announce in list.list ?: return null) {
