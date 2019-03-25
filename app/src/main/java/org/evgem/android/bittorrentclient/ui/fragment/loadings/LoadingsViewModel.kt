@@ -1,19 +1,21 @@
 package org.evgem.android.bittorrentclient.ui.fragment.loadings
 
-import android.arch.lifecycle.MutableLiveData
+
 import android.arch.lifecycle.ViewModel
-import org.evgem.android.bittorrentclient.App
-import org.evgem.android.bittorrentclient.data.entity.Loading
+import android.os.AsyncTask
+import android.util.Log
+import org.evgem.android.bittorrentclient.data.bencode.BDecoder
+import java.io.InputStream
 
-class LoadingsViewModel : ViewModel(), App.TestObserver {
-    val loadings: MutableLiveData<List<Loading>> = MutableLiveData()
-
-    //not main thread
-    override fun observe(list: List<Loading>) {
-        loadings.postValue(list)
+class LoadingsViewModel : ViewModel() {
+    fun addNewLoading(torrentInputStream: InputStream) {
+        TestAsyncTask(torrentInputStream).execute()
     }
+}
 
-    init {
-        App.addObserver(this)
+class TestAsyncTask(private val inputStream: InputStream) : AsyncTask<Void?, Void?, Void?>() {
+    override fun doInBackground(vararg params: Void?): Void? {
+        Log.i("TEST", BDecoder.decode(inputStream).toString())
+        return null
     }
 }
