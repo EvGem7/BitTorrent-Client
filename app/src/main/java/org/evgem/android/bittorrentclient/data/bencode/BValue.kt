@@ -1,6 +1,11 @@
 package org.evgem.android.bittorrentclient.data.bencode
 
-sealed class BValue
+sealed class BValue {
+    val string: ByteArray? get() = (this as? BString)?.value
+    val integer: Long? get() = (this as? BInteger)?.value
+    val list: MutableList<BValue>? get() = (this as? BList)?.value
+    val map: LinkedHashMap<String, BValue>? get() = (this as? BMap)?.value
+}
 
 data class BString(val value: ByteArray) : BValue() {
     override fun equals(other: Any?): Boolean {

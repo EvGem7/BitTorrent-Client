@@ -37,7 +37,6 @@ class BDecoder(private val input: InputStream) {
                 throw BEncodeException("Error while decoding dictionary. Key must be string")
             }
             val key = String(decodeString(c).value)
-//            val key = decodeString(c).value
             result[key] = decode()
             c = input.readChar()
         }
@@ -91,7 +90,6 @@ class BDecoder(private val input: InputStream) {
             read += input.read(buffer, read, size - read).let { if (it != -1) it else throw EOFException() }
         }
         return BString(buffer)
-//        return BString(String(buffer))
     }
 
     private fun InputStream.readChar() = read().toChar()

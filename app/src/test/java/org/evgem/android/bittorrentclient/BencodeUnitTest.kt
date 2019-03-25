@@ -4,6 +4,7 @@ import org.evgem.android.bittorrentclient.data.bencode.*
 import org.evgem.android.bittorrentclient.data.entity.TrackerRequest
 import org.evgem.android.bittorrentclient.data.network.PeerCommunicator
 import org.evgem.android.bittorrentclient.data.network.TrackerCommunicator
+import org.evgem.android.bittorrentclient.data.parse.getTorrentInfo
 import org.evgem.android.bittorrentclient.util.FixedBitSet
 import org.junit.Assert.assertEquals
 import org.junit.Ignore
@@ -112,6 +113,12 @@ class BencodeUnitTest {
     @Test
     @Ignore
     fun debug() {
+        val file = File("/home/evgem/Downloads/test.torrent")
+        FileInputStream(file).use {
+            val metainfo = BDecoder.decode(it) as BMap
+            val torrentInfo = getTorrentInfo(metainfo)
+            println(torrentInfo)
+        }
 //        val sArr = ByteArray(10) {
 //            if (it < 5) {
 //                it.toByte()
