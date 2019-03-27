@@ -17,6 +17,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import org.evgem.android.bittorrentclient.R
+import org.evgem.android.bittorrentclient.async.StartLoadingTask
 import java.io.FileInputStream
 
 class LoadingsFragment : Fragment() {
@@ -49,7 +50,7 @@ class LoadingsFragment : Fragment() {
         layoutManager = LinearLayoutManager(context)
         recycler.apply {
             layoutManager = layoutManager
-            adapter = adapter
+            adapter = this@LoadingsFragment.adapter
             addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
         }
 
@@ -74,7 +75,7 @@ class LoadingsFragment : Fragment() {
     private fun processTorrentResult(data: Intent?) {
         data?.data?.let { uri ->
             val fileDescriptor = context?.contentResolver?.openFileDescriptor(uri, "r")?.fileDescriptor ?: return
-            viewModel.addNewLoading(FileInputStream(fileDescriptor))
+            StartLoadingTask(context ?: return).execute(fileDescriptor)
             return
         }
         Log.e(TAG, "processTorrentResult: uri or intent is null")
