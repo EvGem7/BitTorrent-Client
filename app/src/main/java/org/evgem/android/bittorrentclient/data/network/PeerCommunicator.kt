@@ -12,6 +12,9 @@ import java.net.SocketException
 import java.net.SocketTimeoutException
 import java.nio.ByteBuffer
 
+/**
+ * Provides API for communication with peer.
+ */
 class PeerCommunicator {
     var peer: Peer? = null
         private set

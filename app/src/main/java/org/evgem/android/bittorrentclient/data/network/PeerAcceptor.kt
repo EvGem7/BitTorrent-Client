@@ -1,6 +1,10 @@
 package org.evgem.android.bittorrentclient.data.network
 
 /**
- * Accepts incoming connections from peers
+ * Accepts incoming connections from peers.
  */
-class PeerAcceptor
+class PeerAcceptor(private val observer: Observer) {
+    interface Observer {
+        fun onPeerConnected(peer: PeerCommunicator)
+    }
+}

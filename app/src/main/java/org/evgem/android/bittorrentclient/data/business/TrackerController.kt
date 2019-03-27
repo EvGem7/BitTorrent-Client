@@ -6,6 +6,9 @@ import org.evgem.android.bittorrentclient.data.entity.TrackerRequest
 import org.evgem.android.bittorrentclient.data.network.TrackerCommunicator
 import java.lang.IllegalStateException
 
+/**
+ * Controls communication with tracker while loading.
+ */
 class TrackerController(private val observer: Observer, torrentInfo: TorrentInfo) {
     private val communicators = ArrayList<TrackerCommunicator>()
     private var interval: Int = 0

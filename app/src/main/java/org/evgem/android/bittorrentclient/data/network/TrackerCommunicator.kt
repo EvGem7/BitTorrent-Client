@@ -13,6 +13,9 @@ import java.net.InetAddress
 import java.net.UnknownHostException
 import java.util.*
 
+/**
+ * Provides API for communication with tracker
+ */
 class TrackerCommunicator(private val announceUrl: String) {
     fun sendRequest(request: TrackerRequest): TrackerResponse? {
         val params = ArrayList<Pair<String, ByteArray>>().apply {
