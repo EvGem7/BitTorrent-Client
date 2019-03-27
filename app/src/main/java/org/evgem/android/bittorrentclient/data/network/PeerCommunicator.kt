@@ -1,6 +1,7 @@
 package org.evgem.android.bittorrentclient.data.network
 
 import android.util.Log
+import org.evgem.android.bittorrentclient.constants.HASH_SIZE
 import org.evgem.android.bittorrentclient.data.entity.Peer
 import org.evgem.android.bittorrentclient.util.FixedBitSet
 import java.io.EOFException
@@ -450,7 +451,6 @@ class PeerCommunicator {
         //handshake stuff
         private const val HANDSHAKE_HEADER = "BitTorrent protocol"
         private const val RESERVED_SIZE = 8 //reserved bytes
-        private const val HASH_SIZE = 20 //sha1 hash size
         private const val HANDSHAKE_SIZE = RESERVED_SIZE + 2 * HASH_SIZE
         private const val INFO_HASH_HANDSHAKE_OFFSET = RESERVED_SIZE
         private const val PEER_ID_HANDSHAKE_OFFSET = INFO_HASH_HANDSHAKE_OFFSET + HASH_SIZE

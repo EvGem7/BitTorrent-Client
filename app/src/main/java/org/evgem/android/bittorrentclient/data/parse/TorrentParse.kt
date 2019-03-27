@@ -1,6 +1,7 @@
 package org.evgem.android.bittorrentclient.data.parse
 
 import android.util.Log
+import org.evgem.android.bittorrentclient.constants.HASH_SIZE
 import org.evgem.android.bittorrentclient.data.bencode.BMap
 import org.evgem.android.bittorrentclient.data.bencode.BValue
 import org.evgem.android.bittorrentclient.data.entity.TorrentInfo
@@ -97,4 +98,3 @@ private fun getMultipleFiles(info: LinkedHashMap<String, BValue>): List<TorrentI
 }
 
 private const val TAG = "getTorrentInfo"
-private const val HASH_SIZE = 20 //sha-1 hash size

@@ -2,6 +2,7 @@ package org.evgem.android.bittorrentclient.data.entity
 
 import android.os.Parcel
 import android.os.Parcelable
+import org.evgem.android.bittorrentclient.constants.HASH_SIZE
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashSet
@@ -112,7 +113,5 @@ data class TorrentInfo(
                 return Array(size) { null }
             }
         }
-
-        private const val HASH_SIZE = 20
     }
 }
