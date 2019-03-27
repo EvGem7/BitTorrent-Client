@@ -11,6 +11,9 @@ import java.io.FileInputStream
 import java.lang.IllegalArgumentException
 import java.lang.ref.WeakReference
 
+/**
+ * Parses .torrent file and passes received TorrentInfo to service.
+ */
 class StartLoadingTask(context: Context) : AsyncTask<FileDescriptor, Void?, TorrentInfo?>() {
     private val contextRef = WeakReference(context)
 
