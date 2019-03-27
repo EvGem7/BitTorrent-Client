@@ -15,4 +15,8 @@ class LoadingService : Service() {
     }
 
     inner class LoadingBinder : Binder()
+
+    companion object {
+        const val TORRENT_INFO_EXTRA = "org.evgem.android.bittorrentclient.service.TORRENT_INFO_EXTRA"
+    }
 }
