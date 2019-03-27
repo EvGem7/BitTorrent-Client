@@ -1,4 +1,4 @@
-package org.evgem.android.bittorrentclient.ui.fragment
+package org.evgem.android.bittorrentclient.ui.fragment.navigation
 
 import android.os.Bundle
 import android.support.v4.app.Fragment
