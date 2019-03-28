@@ -131,9 +131,8 @@ class TrackerController(private val master: MasterController, torrentInfo: Torre
                 val responses = LinkedList<Pair<TrackerCommunicator, TrackerResponse>>()
                 var waited = 0L
                 for ((communicator, interval) in localIntervals) {
-                    val toWait = interval - waited
-                    Thread.sleep(toWait)
-                    waited += toWait
+                    Thread.sleep(interval - waited)
+                    waited = interval.toLong()
 
                     //ignoring possible thread blocking
                     val response = communicator.sendRequest(getTrackerRequest()) ?: continue
