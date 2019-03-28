@@ -17,6 +17,9 @@ import java.util.*
  * Provides API for communication with tracker
  */
 class TrackerCommunicator(private val announceUrl: String) {
+    /**
+     * It can block thread for SOCKET_TIMEOUT ms. See TorrentConstants.
+     */
     fun sendRequest(request: TrackerRequest): TrackerResponse? {
         val params = ArrayList<Pair<String, ByteArray>>().apply {
             add("info_hash" to request.infoHash)

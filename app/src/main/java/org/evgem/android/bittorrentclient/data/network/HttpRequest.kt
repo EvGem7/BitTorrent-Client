@@ -1,7 +1,10 @@
 package org.evgem.android.bittorrentclient.data.network
 
 import android.util.Log
+import org.evgem.android.bittorrentclient.constants.SOCKET_TIMEOUT
+import java.net.InetSocketAddress
 import java.net.Socket
+import java.net.SocketTimeoutException
 import java.net.URL
 
 private const val HTTP_PORT = 80
@@ -41,7 +44,14 @@ fun httpRequest(url: String, params: List<Pair<String, ByteArray>>): ByteArray? 
             "Accept: $ACCEPT\r\n" +
             "Connection: $CONNECTION\r\n" +
             "\r\n"
-    Socket(host, HTTP_PORT).use { socket ->
+    Socket().use { socket ->
+        try {
+            socket.connect(InetSocketAddress(host, HTTP_PORT), SOCKET_TIMEOUT)
+        } catch (e: SocketTimeoutException) {
+            Log.e(TAG, "Connection timeout expired")
+            return null
+        }
+
         val writer = socket.getOutputStream().bufferedWriter()
         writer.write(request)
         writer.flush()

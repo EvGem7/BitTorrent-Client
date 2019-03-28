@@ -2,6 +2,7 @@ package org.evgem.android.bittorrentclient.data.network
 
 import android.util.Log
 import org.evgem.android.bittorrentclient.constants.HASH_SIZE
+import org.evgem.android.bittorrentclient.constants.SOCKET_TIMEOUT
 import org.evgem.android.bittorrentclient.data.entity.Peer
 import org.evgem.android.bittorrentclient.util.FixedBitSet
 import java.io.EOFException
@@ -445,7 +446,6 @@ class PeerCommunicator {
     private val tag get() = "PeerCommunicator with $peer"
 
     companion object {
-        private const val SOCKET_TIMEOUT = 2000 //2 seconds
         private const val PEER_MESSAGE_TIMEOUT = 120_000 //2 minutes
 
         //handshake stuff
