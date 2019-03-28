@@ -3,7 +3,7 @@ package org.evgem.android.bittorrentclient.data.business
 import org.evgem.android.bittorrentclient.data.entity.Peer
 import org.evgem.android.bittorrentclient.data.entity.TorrentInfo
 import org.evgem.android.bittorrentclient.data.network.PeerAcceptor
-import org.evgem.android.bittorrentclient.data.network.PeerCommunicator
+import java.net.Socket
 
 /**
  * Controls other controllers: PeerController, TrackerController and PeerAcceptor.
@@ -13,7 +13,16 @@ class LoadingController(private val torrentInfo: TorrentInfo) : TrackerControlle
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun onPeerConnected(peer: PeerCommunicator) {
+    override val acceptingPort: Int
+        get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+    override val uploaded: Long
+        get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+    override val downloaded: Long
+        get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+    override val left: Long
+        get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+
+    override fun onPeerConnected(socket: Socket) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }
