@@ -2,11 +2,14 @@ package org.evgem.android.bittorrentclient.data.parse
 
 import android.util.Log
 import org.evgem.android.bittorrentclient.constants.HASH_SIZE
+import org.evgem.android.bittorrentclient.data.bencode.BEncoder
 import org.evgem.android.bittorrentclient.data.bencode.BMap
 import org.evgem.android.bittorrentclient.data.bencode.BValue
 import org.evgem.android.bittorrentclient.data.entity.TorrentInfo
 import org.evgem.android.bittorrentclient.data.entity.TorrentInfo.File
+import java.io.ByteArrayOutputStream
 import java.lang.StringBuilder
+import java.security.MessageDigest
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashSet
@@ -50,6 +53,18 @@ fun getTorrentInfo(root: BMap): TorrentInfo? {
         getMultipleFiles(info)
     } ?: return null
 
+    val infoEncoded = ByteArrayOutputStream()
+    BEncoder.encode(
+        root.value["info"] ?: return null,
+        infoEncoded
+    )
+    val messageDigest = MessageDigest.getInstance("SHA-1")
+    val infoHash = messageDigest.digest(infoEncoded.toByteArray())
+    if (infoHash.size != HASH_SIZE) {
+        Log.e(TAG, "WTF?? info hash has ${infoHash.size} size")
+        return null
+    }
+
     return TorrentInfo(
         announces,
         pieceLength,
@@ -58,7 +73,8 @@ fun getTorrentInfo(root: BMap): TorrentInfo? {
         creationDate,
         comment,
         createdBy,
-        encoding
+        encoding,
+        infoHash
     )
 }
 

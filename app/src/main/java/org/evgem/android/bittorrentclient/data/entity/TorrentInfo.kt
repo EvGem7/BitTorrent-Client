@@ -19,7 +19,10 @@ data class TorrentInfo(
     val creationDate: Date?,
     val comment: String?,
     val createdBy: String?,
-    val encoding: String?
+    val encoding: String?,
+
+    //hash of info dictionary
+    val infoHash: ByteArray
 ) : Parcelable {
     data class File(
         val path: String,
@@ -50,10 +53,44 @@ data class TorrentInfo(
             it.writeString(comment)
             it.writeString(createdBy)
             it.writeString(encoding)
+
+            it.writeByteArray(infoHash)
         }
     }
 
     override fun describeContents(): Int = 0
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as TorrentInfo
+
+        if (announces != other.announces) return false
+        if (pieceLength != other.pieceLength) return false
+        if (pieces != other.pieces) return false
+        if (files != other.files) return false
+        if (creationDate != other.creationDate) return false
+        if (comment != other.comment) return false
+        if (createdBy != other.createdBy) return false
+        if (encoding != other.encoding) return false
+        if (!infoHash.contentEquals(other.infoHash)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = announces.hashCode()
+        result = 31 * result + pieceLength
+        result = 31 * result + pieces.hashCode()
+        result = 31 * result + files.hashCode()
+        result = 31 * result + (creationDate?.hashCode() ?: 0)
+        result = 31 * result + (comment?.hashCode() ?: 0)
+        result = 31 * result + (createdBy?.hashCode() ?: 0)
+        result = 31 * result + (encoding?.hashCode() ?: 0)
+        result = 31 * result + infoHash.contentHashCode()
+        return result
+    }
 
     companion object {
         @JvmField
@@ -97,6 +134,9 @@ data class TorrentInfo(
                 val createdBy = source.readString()
                 val encoding = source.readString()
 
+                val infoHash = ByteArray(HASH_SIZE)
+                source.readByteArray(infoHash)
+
                 return TorrentInfo(
                     announces,
                     pieceLength,
@@ -105,7 +145,8 @@ data class TorrentInfo(
                     creationDate,
                     comment,
                     createdBy,
-                    encoding
+                    encoding,
+                    infoHash
                 )
             }
 
