@@ -1,6 +1,7 @@
 package org.evgem.android.bittorrentclient.data.parse
 
 import android.util.Log
+import org.evgem.android.bittorrentclient.constants.HASH_ALGORITHM
 import org.evgem.android.bittorrentclient.constants.HASH_SIZE
 import org.evgem.android.bittorrentclient.data.bencode.BEncoder
 import org.evgem.android.bittorrentclient.data.bencode.BMap
@@ -58,7 +59,7 @@ fun getTorrentInfo(root: BMap): TorrentInfo? {
         root.value["info"] ?: return null,
         infoEncoded
     )
-    val messageDigest = MessageDigest.getInstance("SHA-1")
+    val messageDigest = MessageDigest.getInstance(HASH_ALGORITHM)
     val infoHash = messageDigest.digest(infoEncoded.toByteArray())
     if (infoHash.size != HASH_SIZE) {
         Log.e(TAG, "WTF?? info hash has ${infoHash.size} size")
