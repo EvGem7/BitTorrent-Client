@@ -1,28 +1,85 @@
 package org.evgem.android.bittorrentclient.data.business
 
+import android.util.Log
 import org.evgem.android.bittorrentclient.data.entity.Peer
 import org.evgem.android.bittorrentclient.data.entity.TorrentInfo
 import org.evgem.android.bittorrentclient.data.network.PeerAcceptor
+import java.lang.IllegalStateException
 import java.net.Socket
 
 /**
  * Controls other controllers: PeerController, TrackerController and PeerAcceptor.
  */
-class LoadingController(private val torrentInfo: TorrentInfo) : TrackerController.MasterController, PeerAcceptor.Observer {
-    override fun onPeersObtained(peers: List<Peer>) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+class LoadingController(torrentInfo: TorrentInfo) : TrackerController.MasterController,
+    PeerAcceptor.Observer, PeerController.MasterController {
+    private val trackerController = TrackerController(this, torrentInfo)
+    private val peerAcceptor = PeerAcceptor(this)
+    private val peerController = PeerController(this, torrentInfo)
+    private val pieceController = PieceController(torrentInfo)
+
+    fun start(): Boolean {
+        if (
+            peerAcceptor.running ||
+            peerController.running ||
+            trackerController.running
+        ) {
+            Log.e(TAG, "trying to run something already running")
+            return false
+        }
+        try {
+            if (!peerAcceptor.start()) {
+                Log.e(TAG, "cannot start peer acceptor")
+                return false
+            }
+            trackerController.start()
+            peerController.start()
+            return true
+        } catch (e: IllegalStateException) {
+            Log.e(TAG, Log.getStackTraceString(e))
+            return false
+        }
     }
 
-    override val acceptingPort: Int
-        get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
-    override val uploaded: Long
-        get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
-    override val downloaded: Long
-        get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
-    override val left: Long
-        get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+    fun stop(): Boolean {
+        if (
+            !peerAcceptor.running ||
+            !peerController.running ||
+            !trackerController.running
+        ) {
+            Log.e(TAG, "trying to stop something already stopped")
+            return false
+        }
+        return try {
+            trackerController.stop()
+            peerController.stop()
+            peerAcceptor.stop()
+            true
+        } catch (e: IllegalStateException) {
+            Log.e(TAG, Log.getStackTraceString(e))
+            false
+        }
+    }
+
+    override fun onPieceReceived(piece: ByteArray, index: Int) {
+        pieceController.addPiece(piece, index)
+    }
+
+    override fun onPeersObtained(peers: List<Peer>) {
+        peerController.addPeers(peers)
+    }
 
     override fun onPeerConnected(socket: Socket) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        peerController.addPeer(socket)
+    }
+
+    override val acceptingPort: Int get() = peerAcceptor.port ?: 0
+
+    override val uploaded: Long get() = pieceController.uploaded
+    override val downloaded: Long get() = pieceController.downloaded
+    override val left: Long get() = pieceController.left
+    override val piecesStatus: BooleanArray get() = pieceController.piecesStatus
+
+    companion object {
+        private const val TAG = "LoadingController"
     }
 }
