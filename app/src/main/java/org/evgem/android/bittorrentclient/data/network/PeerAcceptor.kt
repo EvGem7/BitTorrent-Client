@@ -15,6 +15,7 @@ class PeerAcceptor(private val observer: Observer) {
     private var loopThread: LoopThread? = null
 
     val running: Boolean get() = serverSocket != null
+    val port: Int? get() = serverSocket?.localPort
 
     interface Observer {
         fun onPeerConnected(socket: Socket)
