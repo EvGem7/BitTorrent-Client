@@ -3,6 +3,9 @@ package org.evgem.android.bittorrentclient.data.business
 import org.evgem.android.bittorrentclient.data.entity.TorrentInfo
 import java.lang.IllegalArgumentException
 
+/**
+ * Responsible for putting pieces into files.
+ */
 class PieceController(private val torrentInfo: TorrentInfo) {
     val piecesStatus = BooleanArray(torrentInfo.pieces.size)
 
