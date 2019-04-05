@@ -48,6 +48,8 @@ class PeerCommunicator {
     private val input: InputStream? get() = socket?.getInputStream()
     private val output: OutputStream? get() = socket?.getOutputStream()
 
+    private var loopThread: LoopThread? = null
+
     var running = false
         private set
 
@@ -64,6 +66,7 @@ class PeerCommunicator {
         handshakeConcluded = false
 
         socket = null
+        loopThread = null
     }
 
     fun start(peer: Peer) {
@@ -83,7 +86,7 @@ class PeerCommunicator {
             this.socket = socket.apply { soTimeout = 0 }
 
             running = true
-            LoopThread().start()
+            loopThread = LoopThread().apply { start() }
         } else {
             throw IllegalStateException("Error. This PeerCommunicator is already running.")
         }
@@ -95,6 +98,9 @@ class PeerCommunicator {
         }
         running = false
         socket?.close()
+        if (loopThread?.isAlive == true) {
+            loopThread?.interrupt()
+        }
     }
 
     fun handshake(infoHash: ByteArray, peerId: ByteArray, reserved: ByteArray = ByteArray(Byte.SIZE_BITS) { 0 }) {
@@ -104,61 +110,84 @@ class PeerCommunicator {
         ) {
             throw IllegalArgumentException("Reserved size must be $RESERVED_SIZE. Hash and peer id sizes must be $HASH_SIZE")
         }
-        output?.write(HANDSHAKE_HEADER.length)
-        output?.write(HANDSHAKE_HEADER.toByteArray())
-        output?.write(reserved)
-        output?.write(infoHash)
-        output?.write(peerId)
+        val buffer = ByteBuffer.allocate(1 + HANDSHAKE_HEADER.length + HANDSHAKE_SIZE)
+            .put(HANDSHAKE_HEADER.length.toByte())
+            .put(HANDSHAKE_HEADER.toByteArray())
+            .put(reserved)
+            .put(infoHash)
+            .put(peerId)
+
+        output?.write(buffer.array())
         output?.flush()
     }
 
     fun keepAlive() {
-        output?.write(0.toByteArray())
+        output?.write(
+            ByteBuffer.allocate(1)
+                .putInt(0)
+                .array()
+        )
         output?.flush()
     }
 
     fun choke() {
-        output?.write(1.toByteArray())
-        output?.write(CHOKE_ID)
+        val buffer = ByteBuffer.allocate(Int.SIZE_BYTES + 1)
+        buffer.putInt(1)
+        buffer.put(CHOKE_ID.toByte())
+        output?.write(buffer.array())
         output?.flush()
         amChoking = true
     }
 
     fun unchoke() {
-        output?.write(1.toByteArray())
-        output?.write(UNCHOKE_ID)
+        val buffer = ByteBuffer.allocate(Int.SIZE_BYTES + 1)
+        buffer.putInt(1)
+        buffer.put(UNCHOKE_ID.toByte())
+        output?.write(buffer.array())
         output?.flush()
         amChoking = false
     }
 
     fun interested() {
-        output?.write(1.toByteArray())
-        output?.write(INTERESTED_ID)
+        val buffer = ByteBuffer.allocate(Int.SIZE_BYTES + 1)
+        buffer.putInt(1)
+        buffer.put(INTERESTED_ID.toByte())
+        output?.write(buffer.array())
         output?.flush()
         amInterested = true
     }
 
     fun notInterested() {
-        output?.write(1.toByteArray())
-        output?.write(NOT_INTERESTED_ID)
+        val buffer = ByteBuffer.allocate(Int.SIZE_BYTES + 1)
+        buffer.putInt(1)
+        buffer.put(NOT_INTERESTED_ID.toByte())
+        output?.write(buffer.array())
         output?.flush()
         amInterested = false
     }
 
     fun have(pieceIndex: Int) {
         val length = 1 + Int.SIZE_BYTES
-        output?.write(length.toByteArray())
-        output?.write(HAVE_ID)
-        output?.write(pieceIndex.toByteArray())
+
+        val buffer = ByteBuffer.allocate(length + Int.SIZE_BYTES)
+        buffer.putInt(length)
+        buffer.put(HAVE_ID.toByte())
+        buffer.putInt(pieceIndex)
+
+        output?.write(buffer.array())
         output?.flush()
     }
 
     fun bitfield(bitSet: FixedBitSet) {
         val payload = bitSet.toByteArray()
         val length = 1 + payload.size
-        output?.write(length.toByteArray())
-        output?.write(BITFIELD_ID)
-        output?.write(payload)
+
+        val buffer = ByteBuffer.allocate(length + Int.SIZE_BYTES)
+        buffer.putInt(length)
+        buffer.put(BITFIELD_ID.toByte())
+        buffer.put(payload)
+
+        output?.write(buffer.array())
         output?.flush()
     }
 
@@ -167,15 +196,16 @@ class PeerCommunicator {
     }
 
     fun piece(pieceIndex: Int, offset: Int, data: ByteArray) {
-        val metadata = ByteBuffer.allocate(2 * Int.SIZE_BYTES)
-            .putInt(pieceIndex)
-            .putInt(offset)
-            .array()
-        val length = 1 + metadata.size + data.size
-        output?.write(length.toByteArray())
-        output?.write(PIECE_ID)
-        output?.write(metadata)
-        output?.write(data)
+        val length = 1 + 2 * Int.SIZE_BYTES + data.size
+
+        val buffer = ByteBuffer.allocate(length + Int.SIZE_BYTES)
+        buffer.putInt(length)
+        buffer.put(PIECE_ID.toByte())
+        buffer.putInt(pieceIndex)
+        buffer.putInt(offset)
+        buffer.put(data)
+
+        output?.write(buffer.array())
         output?.flush()
     }
 
@@ -187,15 +217,15 @@ class PeerCommunicator {
         if (id != REQUEST_ID && id != CANCEL_ID) {
             throw IllegalArgumentException("ID must be REQUEST_ID or CANCEL_ID")
         }
-        val payload = ByteBuffer.allocate(3 * Int.SIZE_BYTES)
-            .putInt(pieceIndex)
-            .putInt(offset)
+        val prefixLength = 1 + 3 * Int.SIZE_BYTES
+
+        val buffer = ByteBuffer.allocate(prefixLength + Int.SIZE_BYTES)
+            .putInt(prefixLength)
+            .put(id.toByte())
+            .putInt(pieceIndex).putInt(offset)
             .putInt(length)
-            .array()
-        val prefixLength = 1 + payload.size
-        output?.write(prefixLength.toByteArray())
-        output?.write(id)
-        output?.write(payload)
+
+        output?.write(buffer.array())
         output?.flush()
     }
 
@@ -262,7 +292,7 @@ class PeerCommunicator {
         return this
     }
 
-    private inner class InitSocketThread : Thread() {
+    private inner class InitSocketThread : Thread("PeerCommunicator init thread") {
         override fun run() {
             super.run()
             peer?.let { peer ->
@@ -288,7 +318,7 @@ class PeerCommunicator {
         }
     }
 
-    private inner class LoopThread : Thread() {
+    private inner class LoopThread : Thread("peer:${peer?.ip}:/loop thread") {
         override fun run() {
             super.run()
             Log.i(tag, "Communication started")
@@ -400,6 +430,8 @@ class PeerCommunicator {
                 }
             } catch (ignored: SocketException) {
 
+            } catch (ignored: InterruptedException) {
+
             } catch (e: Exception) {
                 Log.e(tag, Log.getStackTraceString(e))
             }
@@ -417,36 +449,45 @@ class PeerCommunicator {
     }
 
     private fun InputStream.readFromPeer(timeout: Int = SOCKET_TIMEOUT): Int {
+        val zeroTime = System.currentTimeMillis()
         socket?.soTimeout = timeout
-        val read = read()
-        if (read == -1) {
-            throw EOFException()
+        var read = read()
+        while (read == -1) {
+            if (System.currentTimeMillis() - zeroTime < timeout) {
+                Thread.sleep(DATA_WAIT_TIME) // TODO shitty solution. find how to wait for data in input stream
+                read = read()
+            } else {
+                throw EOFException()
+            }
         }
         socket?.soTimeout = 0
         return read
     }
 
     private fun InputStream.readFromPeer(buffer: ByteArray, timeout: Int = SOCKET_TIMEOUT) {
+        val zeroTime = System.currentTimeMillis()
         socket?.soTimeout = timeout
         var read = 0
         while (read != buffer.size) {
-            val r = read(buffer, read, buffer.size - read)
-            if (r == -1) {
-                throw EOFException()
+            var r = read(buffer, read, buffer.size - read)
+            while (r == -1) {
+                if (System.currentTimeMillis() - zeroTime < timeout) {
+                    Thread.sleep(DATA_WAIT_TIME) // TODO same shit
+                    r = read()
+                } else {
+                    throw EOFException()
+                }
             }
             read += r
         }
         socket?.soTimeout = 0
     }
 
-    private fun Int.toByteArray() = ByteBuffer.allocate(Int.SIZE_BYTES)
-        .putInt(this)
-        .array()
-
     private val tag get() = "PeerCommunicator with $peer"
 
     companion object {
         private const val PEER_MESSAGE_TIMEOUT = 120_000 //2 minutes
+        private const val DATA_WAIT_TIME = 500L
 
         //handshake stuff
         private const val HANDSHAKE_HEADER = "BitTorrent protocol"
