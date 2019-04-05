@@ -25,7 +25,7 @@ data class TorrentInfo(
     val infoHash: ByteArray
 ) : Parcelable {
     data class File(
-        val path: String,
+        var path: String,
         val length: Long
     )
 
