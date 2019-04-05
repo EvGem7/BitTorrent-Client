@@ -1,6 +1,8 @@
 package org.evgem.android.bittorrentclient
 
 import org.evgem.android.bittorrentclient.data.bencode.*
+import org.evgem.android.bittorrentclient.data.business.LoadingController
+import org.evgem.android.bittorrentclient.data.entity.TorrentInfo
 import org.evgem.android.bittorrentclient.data.entity.TrackerRequest
 import org.evgem.android.bittorrentclient.data.network.PeerCommunicator
 import org.evgem.android.bittorrentclient.data.network.TrackerCommunicator
@@ -9,6 +11,7 @@ import org.evgem.android.bittorrentclient.util.FixedBitSet
 import org.junit.Assert.assertEquals
 import org.junit.Ignore
 import org.junit.Test
+import org.junit.experimental.theories.Theories
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
@@ -108,6 +111,28 @@ class BencodeUnitTest {
             }
         }
 
+    }
+
+    @Test
+    fun downloadTest() {
+        val file = File("/home/evgem/Downloads/test.torrent")
+        FileInputStream(file).use {
+            val metainfo = BDecoder.decode(it) as BMap
+            val torrentInfo: TorrentInfo = getTorrentInfo(metainfo) ?: return
+
+            for (f in torrentInfo.files) {
+                f.path = "/tmp/test/" + f.path
+            }
+
+            val loadingController = LoadingController(torrentInfo)
+            if (loadingController.start()) {
+                println("successfully started!")
+                Thread.sleep(1000 * 120)
+                loadingController.stop()
+            } else {
+                println("something went wrong :(")
+            }
+        }
     }
 
     @Test
