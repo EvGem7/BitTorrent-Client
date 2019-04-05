@@ -51,7 +51,7 @@ class PeerAcceptor(private val observer: Observer) {
         loopThread = null
     }
 
-    private inner class LoopThread : Thread() {
+    private inner class LoopThread : Thread("peer acceptor") {
         override fun run() {
             super.run()
             Log.i(TAG, "accepting started")

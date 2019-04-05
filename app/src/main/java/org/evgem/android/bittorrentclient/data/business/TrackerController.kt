@@ -118,7 +118,7 @@ class TrackerController(private val master: MasterController, torrentInfo: Torre
         event = event
     )
 
-    private inner class LoopThread : Thread() {
+    private inner class LoopThread : Thread("tracker controller") {
         override fun run() {
             super.run()
             while (true) {
