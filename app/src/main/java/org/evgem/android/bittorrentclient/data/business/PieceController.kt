@@ -1,6 +1,7 @@
 package org.evgem.android.bittorrentclient.data.business
 
 import org.evgem.android.bittorrentclient.data.entity.TorrentInfo
+import java.io.File
 import java.io.RandomAccessFile
 import java.lang.IllegalArgumentException
 
@@ -11,6 +12,7 @@ class PieceController(private val torrentInfo: TorrentInfo) {
     private val files = ArrayList<RandomAccessFile>(torrentInfo.files.size)
     init {
         for (file in torrentInfo.files) {
+            File(file.path).parentFile.mkdirs()
             val raFile = RandomAccessFile(file.path, "rw")
             raFile.setLength(file.length)
             files += raFile
@@ -40,20 +42,23 @@ class PieceController(private val torrentInfo: TorrentInfo) {
         }
 
         var offset = index.toLong() * torrentInfo.pieceLength
-        var file: RandomAccessFile? = null
-        for (f in files) {
-            if (offset < f.length()) {
-                file = f
-                break
+        var written = 0
+        for (file in files) {
+            if (offset < file.length()) {
+                file.seek(offset)
+                val toFill = file.length() - offset
+                if ((data.size - written) <= toFill) {
+                    file.write(data, written, data.size - written)
+                    break
+                } else {
+                    file.write(data, written, toFill.toInt())
+                    written += toFill.toInt()
+                    offset = 0
+                }
             } else {
-                offset -= f.length()
+                offset -= file.length()
             }
         }
-        if (file == null) {
-            throw UnknownError("cannot find file containing this piece. index=$index")
-        }
-        file.seek(offset)
-        file.write(data)
 
         piecesStatus[index] = true
     }
