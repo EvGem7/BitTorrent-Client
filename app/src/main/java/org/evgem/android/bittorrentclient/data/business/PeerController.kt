@@ -130,7 +130,11 @@ class PeerController(private val master: MasterController, private val torrentIn
 
     @Synchronized
     private fun getPeerRequest(peer: Peer): PeerRequest? {
-        return getPeerRequest(peer, providedPieces[peer] ?: return null)
+        val provided: FreqSortedTreeSet
+        synchronized(providedPieces) {
+            provided = providedPieces[peer] ?: return null
+        }
+        return getPeerRequest(peer, provided)
     }
 
     @Synchronized
@@ -201,8 +205,19 @@ class PeerController(private val master: MasterController, private val torrentIn
         synchronized(communicators) {
             communicators.remove(this)
         }
-        synchronized(downloadingPieces) {
-            downloadingPieces.remove(peer ?: return@synchronized)
+        peer?.let { peer ->
+            synchronized(downloadingPieces) {
+                downloadingPieces.remove(peer)
+            }
+            val provided: FreqSortedTreeSet
+            synchronized(providedPieces) {
+                provided = providedPieces.remove(peer) ?: return@let
+            }
+            synchronized(piecesFreqs) {
+                for (pieceIndex in provided) {
+                    --piecesFreqs[pieceIndex]
+                }
+            }
         }
         for (b in master.piecesStatus) {
             print("$b ")
@@ -236,7 +251,9 @@ class PeerController(private val master: MasterController, private val torrentIn
             return@setOnBitfieldListener
         }
         peer?.let { peer ->
-            providedPieces[peer] = provided
+            synchronized(providedPieces) {
+                providedPieces[peer] = provided
+            }
             getPeerRequest(peer, provided)?.let { request ->
                 unchoke()
                 interested()
@@ -253,11 +270,14 @@ class PeerController(private val master: MasterController, private val torrentIn
     }.setOnHaveListener { pieceIndex ->
         synchronized(piecesFreqs) {
             ++piecesFreqs[pieceIndex]
-            peer?.let {
-                val provided = providedPieces[it] ?: return@setOnHaveListener
-                provided.remove(pieceIndex)
-                provided.add(pieceIndex)
+        }
+        peer?.let { peer ->
+            val provided: FreqSortedTreeSet
+            synchronized(providedPieces) {
+                provided = providedPieces[peer] ?: return@setOnHaveListener
             }
+            provided.remove(pieceIndex)
+            provided.add(pieceIndex)
         }
     }.setOnPieceListener { index, offset, data ->
         peer?.let { peer ->
