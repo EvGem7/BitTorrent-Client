@@ -10,7 +10,7 @@ import java.net.Socket
 /**
  * Controls other controllers: PeerController, TrackerController and PeerAcceptor.
  */
-class LoadingController(torrentInfo: TorrentInfo) :
+class LoadingController(torrentInfo: TorrentInfo, private val observer: Observer) :
     TrackerController.MasterController,
     PeerController.MasterController,
     PeerAcceptor.Observer,
@@ -19,6 +19,10 @@ class LoadingController(torrentInfo: TorrentInfo) :
     private val peerAcceptor = PeerAcceptor(this)
     private val peerController = PeerController(this, torrentInfo)
     private val pieceController = PieceController(this, torrentInfo)
+
+    interface Observer {
+        fun onDownloaded()
+    }
 
     fun start(): Boolean {
         if (
@@ -76,9 +80,7 @@ class LoadingController(torrentInfo: TorrentInfo) :
     }
 
     override fun onFullyDownloaded() {
-        //TODO this is stub
-        stop()
-        println("downloaded")
+        observer.onDownloaded()
     }
 
     override val acceptingPort: Int get() = peerAcceptor.port ?: 0
