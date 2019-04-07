@@ -10,12 +10,15 @@ import java.net.Socket
 /**
  * Controls other controllers: PeerController, TrackerController and PeerAcceptor.
  */
-class LoadingController(torrentInfo: TorrentInfo) : TrackerController.MasterController,
-    PeerAcceptor.Observer, PeerController.MasterController {
+class LoadingController(torrentInfo: TorrentInfo) :
+    TrackerController.MasterController,
+    PeerController.MasterController,
+    PeerAcceptor.Observer,
+    PieceController.Observer {
     private val trackerController = TrackerController(this, torrentInfo)
     private val peerAcceptor = PeerAcceptor(this)
     private val peerController = PeerController(this, torrentInfo)
-    private val pieceController = PieceController(torrentInfo)
+    private val pieceController = PieceController(this, torrentInfo)
 
     fun start(): Boolean {
         if (
@@ -70,6 +73,12 @@ class LoadingController(torrentInfo: TorrentInfo) : TrackerController.MasterCont
 
     override fun onPeerConnected(socket: Socket) {
         peerController.addPeer(socket)
+    }
+
+    override fun onFullyDownloaded() {
+        //TODO this is stub
+        stop()
+        println("downloaded")
     }
 
     override val acceptingPort: Int get() = peerAcceptor.port ?: 0

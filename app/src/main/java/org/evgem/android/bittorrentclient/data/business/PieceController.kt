@@ -8,7 +8,7 @@ import java.lang.IllegalArgumentException
 /**
  * Responsible for putting pieces into files. Paths to files should be absolute.
  */
-class PieceController(private val torrentInfo: TorrentInfo) {
+class PieceController(private val observer: Observer, private val torrentInfo: TorrentInfo) {
     private val files = ArrayList<RandomAccessFile>(torrentInfo.files.size)
     init {
         for (file in torrentInfo.files) {
@@ -17,6 +17,10 @@ class PieceController(private val torrentInfo: TorrentInfo) {
             raFile.setLength(file.length)
             files += raFile
         }
+    }
+
+    interface Observer {
+        fun onFullyDownloaded()
     }
 
     val piecesStatus = BooleanArray(torrentInfo.pieces.size)
@@ -61,5 +65,16 @@ class PieceController(private val torrentInfo: TorrentInfo) {
         }
 
         piecesStatus[index] = true
+
+        var fullyDownloaded = true
+        for (downloaded in piecesStatus) {
+            if (!downloaded) {
+                fullyDownloaded = false
+                break
+            }
+        }
+        if (fullyDownloaded) {
+            observer.onFullyDownloaded()
+        }
     }
 }
