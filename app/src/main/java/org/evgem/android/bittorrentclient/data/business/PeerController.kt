@@ -238,7 +238,11 @@ class PeerController(private val master: MasterController, private val torrentIn
     }.setOnHaveListener { pieceIndex ->
         synchronized(piecesFreqs) {
             ++piecesFreqs[pieceIndex]
-            peer?.let { providedPieces[it]?.add(pieceIndex) } // TODO fix duplicate indexes in set
+            peer?.let {
+                val provided = providedPieces[it] ?: return@setOnHaveListener
+                provided.remove(pieceIndex)
+                provided.add(pieceIndex)
+            }
         }
     }.setOnPieceListener { index, offset, data ->
         peer?.let { peer ->
@@ -257,6 +261,9 @@ class PeerController(private val master: MasterController, private val torrentIn
 
     private inner class FreqSortedTreeSet : TreeSet<Int>(
         Comparator { i1, i2 ->
+            if (i1 == i2) {
+                return@Comparator 0
+            }
             val diff = piecesFreqs[i1] - piecesFreqs[i2]
             return@Comparator when {
                 diff != 0 -> diff
