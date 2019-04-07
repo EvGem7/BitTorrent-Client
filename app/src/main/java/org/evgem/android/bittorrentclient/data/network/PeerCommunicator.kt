@@ -42,7 +42,8 @@ class PeerCommunicator {
     private var onPiece: (PeerCommunicator.(Int, Int, ByteArray) -> Unit)? = null
     private var onCancel: (PeerCommunicator.(Int, Int, Int) -> Unit)? = null
     private var onHandshake: (PeerCommunicator.(ByteArray, ByteArray, ByteArray) -> Unit)? = null
-    private var onSocketInitialized: (PeerCommunicator.() -> Unit)? = null
+    private var onCommunicationStarted: (PeerCommunicator.() -> Unit)? = null
+    private var onCommunicationStopped: (PeerCommunicator.() -> Unit)? = null
 
     private var socket: Socket? = null
     private val input: InputStream? get() = socket?.getInputStream()
@@ -287,8 +288,13 @@ class PeerCommunicator {
         return this
     }
 
-    fun setOnSocketInitializedListener(listener: (PeerCommunicator.() -> Unit)?): PeerCommunicator {
-        onSocketInitialized = listener
+    fun setOnCommunicationStartedListener(listener: (PeerCommunicator.() -> Unit)?): PeerCommunicator {
+        onCommunicationStarted = listener
+        return this
+    }
+
+    fun setOnCommunicationStoppedListener(listener: (PeerCommunicator.() -> Unit)?): PeerCommunicator {
+        onCommunicationStopped = listener
         return this
     }
 
@@ -303,7 +309,6 @@ class PeerCommunicator {
                     }
 
                     LoopThread().start()
-                    onSocketInitialized?.invoke(this@PeerCommunicator)
                 } catch (e: SocketTimeoutException) {
                     Log.e(tag, "Connection timed out!")
                     reset()
@@ -322,6 +327,7 @@ class PeerCommunicator {
         override fun run() {
             super.run()
             Log.i(tag, "Communication started")
+            onCommunicationStarted?.invoke(this@PeerCommunicator)
             try {
                 while (running) {
                     if (input == null) {
@@ -437,6 +443,7 @@ class PeerCommunicator {
             }
             reset()
             Log.i(tag, "Communication stopped")
+            onCommunicationStopped?.invoke(this@PeerCommunicator)
         }
 
         private fun getPeer(handshakeData: ByteArray): Peer? {

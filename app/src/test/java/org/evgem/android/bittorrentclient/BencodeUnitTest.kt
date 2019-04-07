@@ -11,13 +11,11 @@ import org.evgem.android.bittorrentclient.util.FixedBitSet
 import org.junit.Assert.assertEquals
 import org.junit.Ignore
 import org.junit.Test
-import org.junit.experimental.theories.Theories
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.security.MessageDigest
-import java.util.*
 import kotlin.collections.ArrayList
 
 /**
@@ -78,7 +76,7 @@ class BencodeUnitTest {
 
             val cs = ArrayList<PeerCommunicator>()
             for (peer in r!!.peers!!) {
-                val c: PeerCommunicator = PeerCommunicator().setOnSocketInitializedListener {
+                val c: PeerCommunicator = PeerCommunicator().setOnCommunicationStartedListener {
                     println("$peer socket initialized!")
                     handshake(hashInfo, "superpeeeriiiiiddddd".toByteArray())
                 }.setOnHandshakeListener { reserved, infoHash, peerId ->

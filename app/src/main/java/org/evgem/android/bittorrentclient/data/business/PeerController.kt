@@ -191,7 +191,7 @@ class PeerController(private val master: MasterController, private val torrentIn
         }
     }
 
-    private fun initCommunicator() = PeerCommunicator().setOnSocketInitializedListener {
+    private fun initCommunicator() = PeerCommunicator().setOnCommunicationStartedListener {
         handshake(torrentInfo.infoHash, PEER_ID)
     }.setOnHandshakeListener { _, infoHash, _ ->
         if (!infoHash.contentEquals(torrentInfo.infoHash)) {
