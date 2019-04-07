@@ -121,28 +121,33 @@ class TrackerController(private val master: MasterController, torrentInfo: Torre
     private inner class LoopThread : Thread("tracker controller") {
         override fun run() {
             super.run()
-            while (true) {
-                val localIntervals: ArrayList<Pair<TrackerCommunicator, Int>>
-                synchronized(intervals) {
-                    localIntervals = ArrayList(intervals)
-                }
-                localIntervals.sortBy { it.second } //by interval
+            Log.i(TAG, "started")
+            try {
+                while (true) {
+                    val localIntervals: ArrayList<Pair<TrackerCommunicator, Int>>
+                    synchronized(intervals) {
+                        localIntervals = ArrayList(intervals)
+                    }
+                    localIntervals.sortBy { it.second } //by interval
 
-                val responses = LinkedList<Pair<TrackerCommunicator, TrackerResponse>>()
-                var waited = 0L
-                for ((communicator, interval) in localIntervals) {
-                    Thread.sleep(interval - waited)
-                    waited = interval.toLong()
+                    val responses = LinkedList<Pair<TrackerCommunicator, TrackerResponse>>()
+                    var waited = 0L
+                    for ((communicator, interval) in localIntervals) {
+                        Thread.sleep(interval - waited)
+                        waited = interval.toLong()
 
-                    //ignoring possible thread blocking
-                    val response = communicator.sendRequest(getTrackerRequest()) ?: continue
-                    responses += communicator to response
-                }
+                        //ignoring possible thread blocking
+                        val response = communicator.sendRequest(getTrackerRequest()) ?: continue
+                        responses += communicator to response
+                    }
 
-                synchronized(intervals) {
-                    intervals.clear()
-                    responses.forEach { processTrackerResponse(it.first, it.second) }
+                    synchronized(intervals) {
+                        intervals.clear()
+                        responses.forEach { processTrackerResponse(it.first, it.second) }
+                    }
                 }
+            } catch (e: InterruptedException) {
+                Log.i(TAG, "stopped")
             }
         }
     }
