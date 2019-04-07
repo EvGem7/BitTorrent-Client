@@ -12,6 +12,7 @@ import java.security.MessageDigest
 import java.util.*
 import java.util.concurrent.LinkedBlockingQueue
 import kotlin.Comparator
+import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 /**
@@ -24,7 +25,7 @@ class PeerController(private val master: MasterController, private val torrentIn
 
     private val piecesFreqs = IntArray(torrentInfo.pieces.size)
 
-    private val providedPieces = HashMap<Peer, FreqSortedTreeSet>() // map peer to piece indexes that peer provides
+    private val providedPieces = HashMap<Peer, FreqsArrayList>() // map peer to piece indexes that peer provides
 
     private val downloadingPieces = HashMap<Peer, Piece>() // one peer downloads one piece
 
@@ -130,7 +131,7 @@ class PeerController(private val master: MasterController, private val torrentIn
 
     @Synchronized
     private fun getPeerRequest(peer: Peer): PeerRequest? {
-        val provided: FreqSortedTreeSet
+        val provided: FreqsArrayList
         synchronized(providedPieces) {
             provided = providedPieces[peer] ?: return null
         }
@@ -138,7 +139,8 @@ class PeerController(private val master: MasterController, private val torrentIn
     }
 
     @Synchronized
-    private fun getPeerRequest(peer: Peer, provided: FreqSortedTreeSet): PeerRequest? {
+    private fun getPeerRequest(peer: Peer, provided: FreqsArrayList): PeerRequest? {
+        provided.sortBy { piecesFreqs[it] }
         synchronized(downloadingPieces) {
             downloadingPieces[peer]?.let { piece ->
                 return PeerRequest(piece.index, piece.got, getBlockLength(piece))
@@ -160,6 +162,7 @@ class PeerController(private val master: MasterController, private val torrentIn
                     return PeerRequest(pieceIndex, 0, getBlockLength(newPiece))
                 }
             }
+
             return null
         }
     }
@@ -209,7 +212,7 @@ class PeerController(private val master: MasterController, private val torrentIn
             synchronized(downloadingPieces) {
                 downloadingPieces.remove(peer)
             }
-            val provided: FreqSortedTreeSet
+            val provided: FreqsArrayList
             synchronized(providedPieces) {
                 provided = providedPieces.remove(peer) ?: return@let
             }
@@ -219,10 +222,6 @@ class PeerController(private val master: MasterController, private val torrentIn
                 }
             }
         }
-        for (b in master.piecesStatus) {
-            print("$b ")
-        }
-        println()
     }.setOnHandshakeListener { _, infoHash, _ ->
         if (!infoHash.contentEquals(torrentInfo.infoHash)) {
             stop()
@@ -236,9 +235,8 @@ class PeerController(private val master: MasterController, private val torrentIn
         }
         bitfield(bitSet)
     }.setOnBitfieldListener { bitSet ->
-        val provided: FreqSortedTreeSet
+        val provided = FreqsArrayList()
         synchronized(piecesFreqs) {
-            provided = FreqSortedTreeSet()
             for (i in 0 until piecesFreqs.size) {
                 if (bitSet.bits[i]) {
                     ++piecesFreqs[i]
@@ -272,14 +270,22 @@ class PeerController(private val master: MasterController, private val torrentIn
             ++piecesFreqs[pieceIndex]
         }
         peer?.let { peer ->
-            val provided: FreqSortedTreeSet
+            val provided: FreqsArrayList
             synchronized(providedPieces) {
                 provided = providedPieces[peer] ?: return@setOnHaveListener
             }
-            provided.remove(pieceIndex)
-            provided.add(pieceIndex)
+            if (provided.find { pieceIndex == it } == null) {
+                provided += pieceIndex
+            }
         }
     }.setOnPieceListener { index, offset, data ->
+        for ((index, value) in piecesFreqs.withIndex()) {
+            if (value == 0) {
+                print("$index ")
+            }
+        }
+        println()
+
         peer?.let { peer ->
             notifyBlockDownloaded(peer, index, offset, data)
             getPeerRequest(peer)?.let { request -> request(request.index, request.offset, request.length) }
@@ -294,25 +300,13 @@ class PeerController(private val master: MasterController, private val torrentIn
 
     private data class PeerRequest(val index: Int, val offset: Int, val length: Int)
 
-    private inner class FreqSortedTreeSet : TreeSet<Int>(
-        Comparator { i1, i2 ->
-            if (i1 == i2) {
-                return@Comparator 0
-            }
-            val diff = piecesFreqs[i1] - piecesFreqs[i2]
-            return@Comparator when {
-                diff != 0 -> diff
-                Random().nextBoolean() -> 1
-                else -> -1
-            }
-        }
-    )
-
     private inner class Piece(
         val index: Int,
         var got: Int = 0,
         val data: ByteArray = ByteArray(torrentInfo.pieceLength)
     )
+
+    private inner class FreqsArrayList : ArrayList<Int>(torrentInfo.pieces.size)
 
     companion object {
         private const val TAG = "PeerController"
