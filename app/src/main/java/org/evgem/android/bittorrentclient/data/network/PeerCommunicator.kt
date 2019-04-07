@@ -44,6 +44,7 @@ class PeerCommunicator {
     private var onHandshake: (PeerCommunicator.(ByteArray, ByteArray, ByteArray) -> Unit)? = null
     private var onCommunicationStarted: (PeerCommunicator.() -> Unit)? = null
     private var onCommunicationStopped: (PeerCommunicator.() -> Unit)? = null
+    private var onConnectionFailed: (PeerCommunicator.() -> Unit)? = null
 
     private var socket: Socket? = null
     private val input: InputStream? get() = socket?.getInputStream()
@@ -298,6 +299,11 @@ class PeerCommunicator {
         return this
     }
 
+    fun setOnConnectionFailed(listener: (PeerCommunicator.() -> Unit)?): PeerCommunicator {
+        onConnectionFailed = listener
+        return this
+    }
+
     private inner class InitSocketThread : Thread("PeerCommunicator init thread") {
         override fun run() {
             super.run()
@@ -312,9 +318,11 @@ class PeerCommunicator {
                 } catch (e: SocketTimeoutException) {
                     Log.e(tag, "Connection timed out!")
                     reset()
+                    onConnectionFailed?.invoke(this@PeerCommunicator)
                 } catch (e: Exception) {
                     Log.e(tag, Log.getStackTraceString(e))
                     reset()
+                    onConnectionFailed?.invoke(this@PeerCommunicator)
                 }
                 return
             }

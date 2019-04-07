@@ -191,8 +191,23 @@ class PeerController(private val master: MasterController, private val torrentIn
         }
     }
 
-    private fun initCommunicator() = PeerCommunicator().setOnCommunicationStartedListener {
+    private fun initCommunicator() = PeerCommunicator().setOnConnectionFailed {
+        synchronized(communicators) {
+            communicators.remove(this)
+        }
+    }.setOnCommunicationStartedListener {
         handshake(torrentInfo.infoHash, PEER_ID)
+    }.setOnCommunicationStoppedListener {
+        synchronized(communicators) {
+            communicators.remove(this)
+        }
+        synchronized(downloadingPieces) {
+            downloadingPieces.remove(peer ?: return@synchronized)
+        }
+        for (b in master.piecesStatus) {
+            print("$b ")
+        }
+        println()
     }.setOnHandshakeListener { _, infoHash, _ ->
         if (!infoHash.contentEquals(torrentInfo.infoHash)) {
             stop()
