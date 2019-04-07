@@ -38,7 +38,7 @@ class TrackerCommunicator(private val announceUrl: String) {
         }
 
         try {
-            val responseData = httpRequest(announceUrl, params)
+            val responseData = httpRequest(announceUrl, params) ?: return null
             val decoded = BDecoder.decode(ByteArrayInputStream(responseData))
             if (decoded !is BMap) {
                 Log.e(TAG, "Error. Tracker response must be bencoded dictionary.")
