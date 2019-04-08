@@ -30,6 +30,17 @@ class TrackerController(private val master: MasterController, torrentInfo: Torre
         }
     }
 
+    fun requestPeers() {
+        thread {
+            synchronized(intervals) {
+                for (communicator in communicators) {
+                    val response = communicator.sendRequest(getTrackerRequest()) ?: continue
+                    processTrackerResponse(communicator, response)
+                }
+            }
+        }
+    }
+
     fun start() {
         if (running) {
             throw IllegalStateException("This TrackerController is already running")
