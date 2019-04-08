@@ -4,7 +4,6 @@ import android.util.Log
 import org.evgem.android.bittorrentclient.data.entity.Peer
 import org.evgem.android.bittorrentclient.data.entity.TorrentInfo
 import org.evgem.android.bittorrentclient.data.network.PeerAcceptor
-import java.lang.IllegalStateException
 import java.net.Socket
 
 /**
@@ -69,6 +68,10 @@ class LoadingController(torrentInfo: TorrentInfo, private val observer: Observer
 
     override fun onPieceReceived(piece: ByteArray, index: Int) {
         pieceController.addPiece(piece, index)
+    }
+
+    override fun requestPeers() {
+        trackerController.requestPeers()
     }
 
     override fun onPeersObtained(peers: List<Peer>) {
