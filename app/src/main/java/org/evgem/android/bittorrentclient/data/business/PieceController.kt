@@ -38,9 +38,6 @@ class PieceController(private val observer: Observer, private val torrentInfo: T
     val left: Long get() = torrentInfo.pieces.size.toLong() * torrentInfo.pieceLength - downloaded
 
     fun addPiece(data: ByteArray, index: Int) {
-        if (data.size != torrentInfo.pieceLength) {
-            throw IllegalArgumentException("piece size is invalid")
-        }
         if (index >= torrentInfo.pieces.size) {
             throw IllegalArgumentException("too large index: $index")
         }
