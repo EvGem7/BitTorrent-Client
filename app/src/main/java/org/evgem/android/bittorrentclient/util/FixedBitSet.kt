@@ -11,11 +11,29 @@ class FixedBitSet(private val sizeBytes: Int) {
     }
 
     constructor(byteArray: ByteArray) : this(byteArray.size) {
-        bits = BitSet.valueOf(byteArray)
+        for ((byteIndex, byte) in byteArray.withIndex()) {
+            for (bitIndex in 0 until Byte.SIZE_BITS) {
+                val shifted = byte.toInt() shl bitIndex
+                if ((shifted and HIGH_ONE) != 0) {
+                    bits[byteIndex * Byte.SIZE_BITS + bitIndex] = true
+                }
+            }
+        }
     }
 
     fun toByteArray(): ByteArray {
-        return bits.toByteArray().copyOf(sizeBytes)
+        val result = ByteArray(sizeBytes)
+        for (byteIndex in 0 until sizeBytes) {
+            var byte = 0
+            for (bitIndex in 0 until Byte.SIZE_BITS) {
+                if (bits[byteIndex * 8 + bitIndex]) {
+                    val toShift = Byte.SIZE_BITS - 1 - bitIndex
+                    byte = byte or (1 shl toShift)
+                }
+            }
+            result[byteIndex] = byte.toByte()
+        }
+        return result
     }
 
     override fun toString(): String {
@@ -38,5 +56,9 @@ class FixedBitSet(private val sizeBytes: Int) {
         var result = sizeBytes
         result = 31 * result + bits.hashCode()
         return result
+    }
+
+    companion object {
+        private const val HIGH_ONE = 0x80
     }
 }
