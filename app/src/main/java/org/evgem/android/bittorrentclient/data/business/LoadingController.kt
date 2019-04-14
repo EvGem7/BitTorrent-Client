@@ -83,6 +83,7 @@ class LoadingController(torrentInfo: TorrentInfo, private val observer: Observer
     }
 
     override fun onFullyDownloaded() {
+        trackerController.complete()
         observer.onDownloaded()
     }
 
