@@ -1,6 +1,13 @@
 package org.evgem.android.bittorrentclient.constants
 
-val PEER_ID = "AndroidTorrentClient".toByteArray()
+import java.util.*
+
+val PEER_ID = "AndroidTC".let {
+    val result = ByteArray(HASH_SIZE)
+    Random().nextBytes(result)
+    it.toByteArray().copyInto(result)
+    return@let result
+}
 
 const val HASH_SIZE = 20 //sha-1 hash size
 
