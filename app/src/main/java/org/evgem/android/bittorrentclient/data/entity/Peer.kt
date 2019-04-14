@@ -1,6 +1,7 @@
 package org.evgem.android.bittorrentclient.data.entity
 
 import java.net.InetAddress
+import java.util.*
 
 data class Peer(
     val peerId: ByteArray? = null,
@@ -28,5 +29,9 @@ data class Peer(
         result = 31 * result + ip.hashCode()
         result = 31 * result + port
         return result
+    }
+
+    override fun toString(): String {
+        return "Peer(ip=$ip, port=$port)"
     }
 }

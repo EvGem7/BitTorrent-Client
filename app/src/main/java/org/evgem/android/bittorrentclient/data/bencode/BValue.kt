@@ -22,6 +22,10 @@ data class BString(val value: ByteArray) : BValue() {
     override fun hashCode(): Int {
         return value.contentHashCode()
     }
+
+    override fun toString(): String {
+        return String(value)
+    }
 }
 
 data class BInteger(val value: Long) : BValue()
