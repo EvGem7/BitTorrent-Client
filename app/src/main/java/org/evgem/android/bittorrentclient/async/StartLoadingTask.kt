@@ -2,10 +2,12 @@ package org.evgem.android.bittorrentclient.async
 
 import android.os.AsyncTask
 import android.support.v4.app.DialogFragment
+import android.util.Log
 import org.evgem.android.bittorrentclient.data.bencode.BDecoder
 import org.evgem.android.bittorrentclient.data.bencode.BMap
 import org.evgem.android.bittorrentclient.data.entity.TorrentInfo
 import org.evgem.android.bittorrentclient.data.parse.getTorrentInfo
+import org.evgem.android.bittorrentclient.exception.BEncodeException
 import java.io.FileDescriptor
 import java.io.FileInputStream
 
@@ -18,6 +20,8 @@ class StartLoadingTask(private val observer: Observer) : AsyncTask<FileDescripto
          * Main thread.
          */
         fun onTorrentInfoObtained(torrentInfo: TorrentInfo)
+
+        fun onError()
     }
 
     override fun doInBackground(vararg fileDescriptor: FileDescriptor?): TorrentInfo? {
@@ -25,11 +29,24 @@ class StartLoadingTask(private val observer: Observer) : AsyncTask<FileDescripto
             throw IllegalArgumentException("Only one file descriptor must be passed")
         }
         val input = FileInputStream(fileDescriptor[0])
-        val root = BDecoder.decode(input) as? BMap ?: return null
-        return getTorrentInfo(root)
+        try {
+            val root = BDecoder.decode(input) as? BMap ?: return null
+            return getTorrentInfo(root)
+        } catch (e: BEncodeException) {
+            Log.e(TAG, Log.getStackTraceString(e))
+        }
+        return null
     }
 
     override fun onPostExecute(result: TorrentInfo?) {
-        observer.onTorrentInfoObtained(result ?: return)
+        if (result == null) {
+            observer.onError()
+            return
+        }
+        observer.onTorrentInfoObtained(result)
+    }
+
+    companion object {
+        private const val TAG = "StartLoadingTask"
     }
 }

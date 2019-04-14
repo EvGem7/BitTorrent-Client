@@ -10,4 +10,5 @@
     <string name="eta">ETA: %s</string>
     <string name="torrent_file_chooser">Choose .torrent file</string>
     <string name="no_file_manager_toast">Error. Seems like there is no file manager on this device :(</string>
+    <string name="parsing_file_error">Error while parsing file :(</string>
 </resources>

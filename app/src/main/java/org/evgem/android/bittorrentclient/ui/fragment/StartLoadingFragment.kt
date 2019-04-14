@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
+import android.widget.Toast
 import org.evgem.android.bittorrentclient.R
 import org.evgem.android.bittorrentclient.async.StartLoadingTask
 import org.evgem.android.bittorrentclient.data.entity.TorrentInfo
@@ -29,6 +30,11 @@ class StartLoadingFragment : DialogFragment(), StartLoadingTask.Observer {
             putExtra(LoadingService.TORRENT_INFO_EXTRA, torrentInfo)
         }
         context?.startService(intent)
+        dismiss()
+    }
+
+    override fun onError() {
+        Toast.makeText(context, R.string.parsing_file_error, Toast.LENGTH_LONG).show()
         dismiss()
     }
 }
