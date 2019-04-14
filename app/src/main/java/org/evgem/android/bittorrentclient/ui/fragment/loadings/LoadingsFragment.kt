@@ -18,7 +18,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import org.evgem.android.bittorrentclient.R
 import org.evgem.android.bittorrentclient.async.StartLoadingTask
-import java.io.FileInputStream
+import org.evgem.android.bittorrentclient.ui.fragment.StartLoadingFragment
 
 class LoadingsFragment : Fragment() {
     private lateinit var viewModel: LoadingsViewModel
@@ -75,7 +75,8 @@ class LoadingsFragment : Fragment() {
     private fun processTorrentResult(data: Intent?) {
         data?.data?.let { uri ->
             val fileDescriptor = context?.contentResolver?.openFileDescriptor(uri, "r")?.fileDescriptor ?: return
-            StartLoadingTask(context ?: return).execute(fileDescriptor)
+            val dialog = StartLoadingFragment().apply { show(this@LoadingsFragment.fragmentManager, START_LOADING_FRAGMENT_TAG) }
+            StartLoadingTask(dialog).execute(fileDescriptor)
             return
         }
         Log.e(TAG, "processTorrentResult: uri or intent is null")
@@ -104,5 +105,7 @@ class LoadingsFragment : Fragment() {
         private const val TORRENT_FILE_REQUEST_CODE = 1231
 
         private const val TAG = "LoadingsFragment"
+
+        private const val START_LOADING_FRAGMENT_TAG = "start loading fragment tag"
     }
 }
