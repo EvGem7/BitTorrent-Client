@@ -198,7 +198,6 @@ class PeerController(private val master: MasterController, private val torrentIn
         return null
     }
 
-    @Synchronized
     private fun notifyBlockDownloaded(peer: Peer, index: Int, offset: Int, data: ByteArray) {
         peerPriorities[peer] = 1 + (peerPriorities[peer] ?: 0)
         val piece = downloadingPieces[peer]
