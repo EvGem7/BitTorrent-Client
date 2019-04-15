@@ -1,9 +1,13 @@
 package org.evgem.android.bittorrentclient.ui.fragment.loadings
 
 import android.app.Activity
+import android.arch.lifecycle.Observer
+import android.content.ComponentName
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.IBinder
 import android.support.design.widget.FloatingActionButton
 import android.support.v4.app.Fragment
 import android.support.v7.widget.DividerItemDecoration
@@ -16,6 +20,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import org.evgem.android.bittorrentclient.R
 import org.evgem.android.bittorrentclient.async.StartLoadingTask
+import org.evgem.android.bittorrentclient.service.LoadingService
 import org.evgem.android.bittorrentclient.ui.fragment.StartLoadingFragment
 
 class LoadingsFragment : Fragment() {
@@ -26,6 +31,8 @@ class LoadingsFragment : Fragment() {
     //recycler stuff
     private val adapter = LoadingsAdapter()
     private lateinit var layoutManager: RecyclerView.LayoutManager
+
+    private val serviceConnection = LoadingServiceConnection()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val v = inflater.inflate(R.layout.fragment_loadings, container, false)
@@ -49,6 +56,17 @@ class LoadingsFragment : Fragment() {
         fab.setOnClickListener {
             sendTorrentIntent()
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val intent = Intent(context, LoadingService::class.java)
+        context?.bindService(intent, serviceConnection, 0)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        context?.unbindService(serviceConnection)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -88,6 +106,22 @@ class LoadingsFragment : Fragment() {
             )
         } else {
             Toast.makeText(context, R.string.no_file_manager_toast, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private inner class LoadingServiceConnection : ServiceConnection {
+        override fun onServiceDisconnected(name: ComponentName?) {
+            Log.i(TAG, "disconnected from $name")
+        }
+
+        override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
+            Log.i(TAG, "connected to $name")
+            (binder as? LoadingService.LoadingBinder)?.let {
+                it.loadings.observe(this@LoadingsFragment, Observer { newData ->
+                    adapter.setLoadings(newData ?: return@Observer)
+                    adapter.notifyDataSetChanged() // TODO notify only changed items
+                })
+            }
         }
     }
 
