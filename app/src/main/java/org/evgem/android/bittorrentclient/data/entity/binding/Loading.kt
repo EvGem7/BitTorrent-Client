@@ -1,4 +1,4 @@
-package org.evgem.android.bittorrentclient.data.entity
+package org.evgem.android.bittorrentclient.data.entity.binding
 
 import java.math.BigDecimal
 import java.math.MathContext

@@ -5,7 +5,7 @@ import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import org.evgem.android.bittorrentclient.R
-import org.evgem.android.bittorrentclient.data.entity.Loading
+import org.evgem.android.bittorrentclient.data.entity.binding.Loading
 import org.evgem.android.bittorrentclient.databinding.ItemLoadingBinding
 
 class LoadingsAdapter : RecyclerView.Adapter<LoadingsViewHolder>() {
