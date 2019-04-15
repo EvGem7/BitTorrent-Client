@@ -1,8 +1,6 @@
 package org.evgem.android.bittorrentclient.ui.fragment.loadings
 
 import android.app.Activity
-import android.arch.lifecycle.ViewModelProviders
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -21,8 +19,6 @@ import org.evgem.android.bittorrentclient.async.StartLoadingTask
 import org.evgem.android.bittorrentclient.ui.fragment.StartLoadingFragment
 
 class LoadingsFragment : Fragment() {
-    private lateinit var viewModel: LoadingsViewModel
-
     //views
     private lateinit var recycler: RecyclerView
     private lateinit var fab: FloatingActionButton
@@ -30,11 +26,6 @@ class LoadingsFragment : Fragment() {
     //recycler stuff
     private val adapter = LoadingsAdapter()
     private lateinit var layoutManager: RecyclerView.LayoutManager
-
-    override fun onAttach(context: Context?) {
-        super.onAttach(context)
-        viewModel = ViewModelProviders.of(this).get(LoadingsViewModel::class.java)
-    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val v = inflater.inflate(R.layout.fragment_loadings, container, false)
