@@ -68,7 +68,11 @@ data class TorrentInfo(
 
         if (announces != other.announces) return false
         if (pieceLength != other.pieceLength) return false
-        if (pieces != other.pieces) return false
+
+        for ((index: Int, piece: ByteArray) in pieces.withIndex()) {
+            if (!piece.contentEquals(other.pieces[index])) return false
+        }
+
         if (files != other.files) return false
         if (creationDate != other.creationDate) return false
         if (comment != other.comment) return false
@@ -91,7 +95,7 @@ data class TorrentInfo(
         result = 31 * result + infoHash.contentHashCode()
         return result
     }
-
+    
     companion object {
         @JvmField
         val CREATOR = object : Parcelable.Creator<TorrentInfo> {
