@@ -4,9 +4,9 @@ import android.arch.persistence.room.Database
 import android.arch.persistence.room.Room
 import android.arch.persistence.room.RoomDatabase
 import android.content.Context
-import org.evgem.android.bittorrentclient.data.entity.database.Loading
+import org.evgem.android.bittorrentclient.data.entity.LoadingInfo
 
-@Database(entities = [Loading::class], version = 1)
+@Database(entities = [LoadingInfo::class], version = 1)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun loadingDao(): LoadingDao
 

@@ -1,12 +1,14 @@
-package org.evgem.android.bittorrentclient.data.entity.database
+package org.evgem.android.bittorrentclient.data.entity
 
 import android.arch.persistence.room.*
 import android.os.Parcel
-import org.evgem.android.bittorrentclient.data.entity.TorrentInfo
 
+/**
+ * Entity class for Room Database.
+ */
 @Entity(tableName = "loading")
-@TypeConverters(Loading.TorrentInfoTypeConverter::class)
-data class Loading(
+@TypeConverters(LoadingInfo.TorrentInfoTypeConverter::class)
+data class LoadingInfo(
     @ColumnInfo(name = "torrent_info_binary")
     var torrentInfo: TorrentInfo,
 

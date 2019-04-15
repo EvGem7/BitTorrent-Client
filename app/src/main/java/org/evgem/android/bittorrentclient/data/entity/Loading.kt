@@ -1,8 +1,11 @@
-package org.evgem.android.bittorrentclient.data.entity.binding
+package org.evgem.android.bittorrentclient.data.entity
 
 import java.math.BigDecimal
 import java.math.MathContext
 
+/**
+ * Entity class for data binding.
+ */
 data class Loading(
     val name: String,
     val status: String,
