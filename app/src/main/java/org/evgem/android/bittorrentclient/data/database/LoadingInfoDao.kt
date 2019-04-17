@@ -6,7 +6,7 @@ import android.arch.persistence.room.Query
 import org.evgem.android.bittorrentclient.data.entity.LoadingInfo
 
 @Dao
-interface LoadingDao {
+interface LoadingInfoDao {
     @Insert
     fun insert(loadingInfo: LoadingInfo)
 
