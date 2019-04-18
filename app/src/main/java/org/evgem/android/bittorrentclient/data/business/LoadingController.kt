@@ -1,6 +1,7 @@
 package org.evgem.android.bittorrentclient.data.business
 
 import android.util.Log
+import org.evgem.android.bittorrentclient.data.entity.LoadingInfo
 import org.evgem.android.bittorrentclient.data.entity.Peer
 import org.evgem.android.bittorrentclient.data.entity.TorrentInfo
 import org.evgem.android.bittorrentclient.data.network.PeerAcceptor
@@ -9,15 +10,36 @@ import java.net.Socket
 /**
  * Controls other controllers: PeerController, TrackerController and PeerAcceptor.
  */
-class LoadingController(torrentInfo: TorrentInfo, private val observer: Observer) :
-    TrackerController.MasterController,
+class LoadingController private constructor(
+    val torrentInfo: TorrentInfo,
+    private val observer: Observer,
+    piecesStatus: BooleanArray
+) : TrackerController.MasterController,
     PeerController.MasterController,
     PeerAcceptor.Observer,
     PieceController.Observer {
+
     private val trackerController = TrackerController(this, torrentInfo)
     private val peerAcceptor = PeerAcceptor(this)
     private val peerController = PeerController(this, torrentInfo)
-    private val pieceController = PieceController(this, torrentInfo)
+    private val pieceController = PieceController(this, torrentInfo, piecesStatus)
+
+    constructor(torrentInfo: TorrentInfo, observer: Observer) : this(
+        torrentInfo,
+        observer,
+        BooleanArray(torrentInfo.pieces.size)
+    )
+
+    constructor(loadingInfo: LoadingInfo, observer: Observer) : this(
+        loadingInfo.torrentInfo,
+        observer,
+        loadingInfo.piecesStatus
+    )
+
+    var status: Status = Status.DOWNLOADING
+        private set
+
+    enum class Status { DOWNLOADING, SEEDING, ERROR, STOPPED }
 
     interface Observer {
         fun onDownloaded()
@@ -35,13 +57,20 @@ class LoadingController(torrentInfo: TorrentInfo, private val observer: Observer
         try {
             if (!peerAcceptor.start()) {
                 Log.e(TAG, "cannot start peer acceptor")
+                status = Status.ERROR
                 return false
             }
             trackerController.start()
             peerController.start()
+            status = if (pieceController.isDownloaded) {
+                Status.SEEDING
+            } else {
+                Status.DOWNLOADING
+            }
             return true
         } catch (e: IllegalStateException) {
             Log.e(TAG, Log.getStackTraceString(e))
+            status = Status.ERROR
             return false
         }
     }
@@ -59,9 +88,11 @@ class LoadingController(torrentInfo: TorrentInfo, private val observer: Observer
             trackerController.stop()
             peerController.stop()
             peerAcceptor.stop()
+            status = Status.STOPPED
             true
         } catch (e: IllegalStateException) {
             Log.e(TAG, Log.getStackTraceString(e))
+            status = Status.ERROR
             false
         }
     }
@@ -84,6 +115,7 @@ class LoadingController(torrentInfo: TorrentInfo, private val observer: Observer
 
     override fun onFullyDownloaded() {
         trackerController.complete()
+        status = Status.SEEDING
         observer.onDownloaded()
     }
 
