@@ -22,8 +22,18 @@ data class TorrentInfo(
     val encoding: String?,
 
     //hash of info dictionary
-    val infoHash: ByteArray
+    val infoHash: ByteArray,
+
+    val name: String
 ) : Parcelable {
+    val totalSize: Long
+
+    init {
+        var size = 0L
+        files.forEach { size += it.length }
+        totalSize = size
+    }
+
     data class File(
         var path: String,
         val length: Long
@@ -55,6 +65,8 @@ data class TorrentInfo(
             it.writeString(encoding)
 
             it.writeByteArray(infoHash)
+
+            it.writeString(name)
         }
     }
 
@@ -79,6 +91,8 @@ data class TorrentInfo(
         if (createdBy != other.createdBy) return false
         if (encoding != other.encoding) return false
         if (!infoHash.contentEquals(other.infoHash)) return false
+        if (name != other.name) return false
+        if (totalSize != other.totalSize) return false
 
         return true
     }
@@ -93,9 +107,12 @@ data class TorrentInfo(
         result = 31 * result + (createdBy?.hashCode() ?: 0)
         result = 31 * result + (encoding?.hashCode() ?: 0)
         result = 31 * result + infoHash.contentHashCode()
+        result = 31 * result + name.hashCode()
+        result = 31 * result + totalSize.hashCode()
         return result
     }
-    
+
+
     companion object {
         @JvmField
         val CREATOR = object : Parcelable.Creator<TorrentInfo> {
@@ -141,6 +158,8 @@ data class TorrentInfo(
                 val infoHash = ByteArray(HASH_SIZE)
                 source.readByteArray(infoHash)
 
+                val name = source.readString() ?: return null
+
                 return TorrentInfo(
                     announces,
                     pieceLength,
@@ -150,7 +169,8 @@ data class TorrentInfo(
                     comment,
                     createdBy,
                     encoding,
-                    infoHash
+                    infoHash,
+                    name
                 )
             }
 

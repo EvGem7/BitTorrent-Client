@@ -66,6 +66,8 @@ fun getTorrentInfo(root: BMap): TorrentInfo? {
         return null
     }
 
+    val name = info["name"]?.string?.let { String(it) } ?: return null
+
     return TorrentInfo(
         announces,
         pieceLength,
@@ -75,7 +77,8 @@ fun getTorrentInfo(root: BMap): TorrentInfo? {
         comment,
         createdBy,
         encoding,
-        infoHash
+        infoHash,
+        name
     )
 }
 

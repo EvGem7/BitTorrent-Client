@@ -41,19 +41,12 @@ class PeerController(private val master: MasterController, private val torrentIn
     private val lastPieceLength: Int
 
     init {
-        var totalSize = 0L
-        torrentInfo.files.forEach { totalSize += it.length }
-        val rest = (totalSize % torrentInfo.pieceLength).toInt()
+        val rest = (torrentInfo.totalSize % torrentInfo.pieceLength).toInt()
         lastPieceLength = if (rest != 0) rest else torrentInfo.pieceLength
     }
 
     var running: Boolean = false
         private set
-
-    var status: Status = Status.DOWNLOADING
-        private set
-
-    enum class Status { DOWNLOADING, SEEDING }
 
     interface MasterController {
         fun requestPeers()
