@@ -8,7 +8,7 @@ import org.evgem.android.bittorrentclient.data.entity.LoadingInfo
 
 @Database(entities = [LoadingInfo::class], version = 1)
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun loadingDao(): LoadingDao
+    abstract fun loadingDao(): LoadingInfoDao
 
     companion object {
         fun init(applicationContext: Context) {
