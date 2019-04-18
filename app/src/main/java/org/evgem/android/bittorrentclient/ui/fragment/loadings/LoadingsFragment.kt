@@ -47,7 +47,7 @@ class LoadingsFragment : Fragment() {
         //init recycler
         layoutManager = LinearLayoutManager(context)
         recycler.apply {
-            layoutManager = layoutManager
+            layoutManager = this@LoadingsFragment.layoutManager
             adapter = this@LoadingsFragment.adapter
             addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
         }
@@ -61,6 +61,7 @@ class LoadingsFragment : Fragment() {
     override fun onStart() {
         super.onStart()
         val intent = Intent(context, LoadingService::class.java)
+        context?.startService(intent)
         context?.bindService(intent, serviceConnection, 0)
     }
 
