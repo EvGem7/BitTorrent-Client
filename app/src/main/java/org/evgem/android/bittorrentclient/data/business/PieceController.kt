@@ -3,13 +3,17 @@ package org.evgem.android.bittorrentclient.data.business
 import org.evgem.android.bittorrentclient.data.entity.TorrentInfo
 import java.io.File
 import java.io.RandomAccessFile
-import java.lang.IllegalArgumentException
 
 /**
  * Responsible for putting pieces into files. Paths to files should be absolute.
  */
-class PieceController(private val observer: Observer, private val torrentInfo: TorrentInfo) {
+class PieceController(
+    private val observer: Observer,
+    private val torrentInfo: TorrentInfo,
+    val piecesStatus: BooleanArray
+) {
     private val files = ArrayList<RandomAccessFile>(torrentInfo.files.size)
+
     init {
         for (file in torrentInfo.files) {
             File(file.path).parentFile.mkdirs()
@@ -23,18 +27,21 @@ class PieceController(private val observer: Observer, private val torrentInfo: T
         fun onFullyDownloaded()
     }
 
-    val piecesStatus = BooleanArray(torrentInfo.pieces.size)
+    val isDownloaded: Boolean get() = left == 0L
 
     val uploaded: Long get() = 0 // TODO
-    val downloaded: Long get() {
-        var count = 0
-        for (gotPiece in piecesStatus) {
-            if (gotPiece) {
-                ++count
+
+    val downloaded: Long
+        get() {
+            var count = 0
+            for (gotPiece in piecesStatus) {
+                if (gotPiece) {
+                    ++count
+                }
             }
+            return count.toLong() * torrentInfo.pieceLength
         }
-        return count.toLong() * torrentInfo.pieceLength
-    }
+
     val left: Long get() = torrentInfo.pieces.size.toLong() * torrentInfo.pieceLength - downloaded
 
     fun addPiece(data: ByteArray, index: Int) {
