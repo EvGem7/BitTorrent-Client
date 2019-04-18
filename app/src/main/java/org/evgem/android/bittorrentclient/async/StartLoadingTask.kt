@@ -10,6 +10,7 @@ import org.evgem.android.bittorrentclient.data.parse.getTorrentInfo
 import org.evgem.android.bittorrentclient.exception.BEncodeException
 import java.io.FileDescriptor
 import java.io.FileInputStream
+import java.io.IOException
 
 /**
  * Parses .torrent file and passes received TorrentInfo to observer.
@@ -29,13 +30,17 @@ class StartLoadingTask(private val observer: Observer) : AsyncTask<FileDescripto
             throw IllegalArgumentException("Only one file descriptor must be passed")
         }
         val input = FileInputStream(fileDescriptor[0])
-        try {
-            val root = BDecoder.decode(input) as? BMap ?: return null
-            return getTorrentInfo(root)
-        } catch (e: BEncodeException) {
-            Log.e(TAG, Log.getStackTraceString(e))
+        input.use {
+            try {
+                val root = BDecoder.decode(input) as? BMap ?: return null
+                return getTorrentInfo(root)
+            } catch (e: BEncodeException) {
+                Log.e(TAG, Log.getStackTraceString(e))
+            } catch (e: IOException) {
+                Log.e(TAG, Log.getStackTraceString(e))
+            }
+            return null
         }
-        return null
     }
 
     override fun onPostExecute(result: TorrentInfo?) {
