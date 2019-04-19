@@ -71,6 +71,15 @@ class LoadingsFragment : Fragment() {
         context?.bindService(intent, serviceConnection, 0)
     }
 
+    override fun onResume() {
+        super.onResume()
+        activity?.intent?.data?.let { uri ->
+            if (uri.scheme == "file") {
+                processTorrentResult(uri)
+            }
+        }
+    }
+
     override fun onStop() {
         super.onStop()
         context?.unbindService(serviceConnection)
