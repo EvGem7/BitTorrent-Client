@@ -11,4 +11,6 @@
     <string name="torrent_file_chooser">Choose .torrent file</string>
     <string name="no_file_manager_toast">Error. Seems like there is no file manager on this device :(</string>
     <string name="parsing_file_error">Error while parsing file :(</string>
+    <string name="write_permission_error">I cannot download without write permission :(</string>
+    <string name="read_permission_error">I cannot start download without read permission :(</string>
 </resources>

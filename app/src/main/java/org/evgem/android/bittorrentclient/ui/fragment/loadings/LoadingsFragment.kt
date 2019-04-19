@@ -1,15 +1,18 @@
 package org.evgem.android.bittorrentclient.ui.fragment.loadings
 
+import android.Manifest
 import android.app.Activity
 import android.arch.lifecycle.Observer
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
 import android.support.design.widget.FloatingActionButton
 import android.support.v4.app.Fragment
+import android.support.v4.content.ContextCompat
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -24,15 +27,18 @@ import org.evgem.android.bittorrentclient.service.LoadingService
 import org.evgem.android.bittorrentclient.ui.fragment.StartLoadingFragment
 
 class LoadingsFragment : Fragment() {
-    //views
+    // views
     private lateinit var recycler: RecyclerView
     private lateinit var fab: FloatingActionButton
 
-    //recycler stuff
+    // recycler stuff
     private val adapter = LoadingsAdapter()
     private lateinit var layoutManager: RecyclerView.LayoutManager
 
     private val serviceConnection = LoadingServiceConnection()
+
+    // for runtime permission request
+    private lateinit var pendingFileUri: Uri
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val v = inflater.inflate(R.layout.fragment_loadings, container, false)
@@ -77,19 +83,49 @@ class LoadingsFragment : Fragment() {
         }
         when (requestCode) {
             TORRENT_FILE_REQUEST_CODE -> {
-                processTorrentResult(data)
+                data?.data?.let {
+                    processTorrentResult(it)
+                    return
+                }
+                Log.e(TAG, "onActivityResult: uri or intent is null")
             }
         }
     }
 
-    private fun processTorrentResult(data: Intent?) {
-        data?.data?.let { uri ->
-            val fileDescriptor = context?.contentResolver?.openFileDescriptor(uri, "r")?.fileDescriptor ?: return
-            val dialog = StartLoadingFragment().apply { show(this@LoadingsFragment.fragmentManager, START_LOADING_FRAGMENT_TAG) }
-            StartLoadingTask(dialog).execute(fileDescriptor)
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        when (requestCode) {
+            READ_EXTERNAL_STORAGE_REQUEST_CODE -> {
+                if (permissions.isNotEmpty() && grantResults.isNotEmpty() &&
+                    permissions[0] == Manifest.permission.READ_EXTERNAL_STORAGE &&
+                    grantResults[0] == PackageManager.PERMISSION_GRANTED
+                ) {
+                    processTorrentResult(pendingFileUri)
+                } else {
+                    Toast.makeText(context, R.string.read_permission_error, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    private fun processTorrentResult(uri: Uri) {
+        val activity = activity ?: return
+        if (ContextCompat.checkSelfPermission(
+                activity,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(
+                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
+                READ_EXTERNAL_STORAGE_REQUEST_CODE
+            )
+            pendingFileUri = uri
             return
         }
-        Log.e(TAG, "processTorrentResult: uri or intent is null")
+
+        val fileDescriptor = context?.contentResolver?.openFileDescriptor(uri, "r")?.fileDescriptor ?: return
+        val dialog =
+            StartLoadingFragment().apply { show(this@LoadingsFragment.fragmentManager, START_LOADING_FRAGMENT_TAG) }
+        StartLoadingTask(dialog).execute(fileDescriptor)
     }
 
     private fun sendTorrentIntent() {
@@ -129,6 +165,8 @@ class LoadingsFragment : Fragment() {
     companion object {
         private const val TORRENT_MIME_TYPE = "application/x-bittorrent"
         private const val TORRENT_FILE_REQUEST_CODE = 1231
+
+        private const val READ_EXTERNAL_STORAGE_REQUEST_CODE = 761
 
         private const val TAG = "LoadingsFragment"
 
