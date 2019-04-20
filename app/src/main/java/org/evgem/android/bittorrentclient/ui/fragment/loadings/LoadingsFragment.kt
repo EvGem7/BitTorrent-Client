@@ -73,9 +73,12 @@ class LoadingsFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        activity?.intent?.data?.let { uri ->
-            if (uri.scheme == "file") {
-                processTorrentResult(uri)
+        activity?.intent?.let { intent ->
+            if (intent.action == Intent.ACTION_VIEW) {
+                intent.data?.let { uri ->
+                    processTorrentResult(uri)
+                    activity?.intent = null
+                }
             }
         }
     }
