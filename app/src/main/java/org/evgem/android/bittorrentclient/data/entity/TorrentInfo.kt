@@ -27,11 +27,15 @@ data class TorrentInfo(
     val name: String
 ) : Parcelable {
     val totalSize: Long
+    val lastPieceLength: Int
 
     init {
         var size = 0L
         files.forEach { size += it.length }
         totalSize = size
+
+        val rest = (totalSize % pieceLength).toInt()
+        lastPieceLength = if (rest != 0) rest else pieceLength
     }
 
     data class File(

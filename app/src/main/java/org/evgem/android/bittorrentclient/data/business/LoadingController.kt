@@ -106,7 +106,9 @@ class LoadingController private constructor(
     }
 
     override fun onPeersObtained(peers: List<Peer>) {
-        peerController.addPeers(peers)
+        if (!isDownloaded) {
+            peerController.addPeers(peers)
+        }
     }
 
     override fun onPeerConnected(socket: Socket) {
@@ -119,12 +121,18 @@ class LoadingController private constructor(
         observer.onDownloaded()
     }
 
+    override fun notifyBadPiece(index: Int) {
+        peerController.reloadPiece(index)
+    }
+
     override val acceptingPort: Int get() = peerAcceptor.port ?: 0
 
     override val uploaded: Long get() = pieceController.uploaded
     override val downloaded: Long get() = pieceController.downloaded
     override val left: Long get() = pieceController.left
     override val piecesStatus: BooleanArray get() = pieceController.piecesStatus
+
+    override val isDownloaded: Boolean get() = pieceController.isDownloaded
 
     companion object {
         private const val TAG = "LoadingController"

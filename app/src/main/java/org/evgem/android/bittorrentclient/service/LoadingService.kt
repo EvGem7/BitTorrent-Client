@@ -25,9 +25,6 @@ class LoadingService : Service(), LoadingController.Observer {
 
     private var loopThread = LoopThread()
 
-    private val oldDownloaded = SparseArray<Long>()
-    private val oldUploaded = SparseArray<Long>()
-
     private val dao: LoadingInfoDao = AppDatabase.INSTANCE.loadingDao()
 
     private val pool = Executors.newFixedThreadPool(1)
@@ -127,25 +124,23 @@ class LoadingService : Service(), LoadingController.Observer {
             val name = controller.torrentInfo.name
             val status = controller.status.name
             val progress = downloaded.toFloat() / controller.torrentInfo.totalSize * 100
-            val downSpeed = (downloaded - oldDownloaded[index, 0]) / EMITTING_PERIOD
-            val upSpeed = (uploaded - oldUploaded[index, 0]) / EMITTING_PERIOD
+            val downSpeed = ""
+            val upSpeed = ""
             val size = controller.torrentInfo.totalSize
-            val eta = left.toDouble() / downSpeed
+            val eta = ""
             val peersCount = 0
             val seedsCount = 0
             toEmit += Loading(
                 name,
                 status,
                 progress,
-                downSpeed.toString(),
-                upSpeed.toString(),
+                downSpeed,
+                upSpeed,
                 size.toString(),
-                eta.toString(),
+                eta,
                 peersCount,
                 seedsCount
             )
-            oldDownloaded.put(index, downloaded)
-            oldUploaded.put(index, uploaded)
         }
         loadings.postValue(toEmit)
     }
@@ -187,7 +182,7 @@ class LoadingService : Service(), LoadingController.Observer {
     companion object {
         private const val TAG = "LoadingService"
 
-        private const val EMITTING_PERIOD = 1000L
+        private const val EMITTING_PERIOD = 1000L // in ms
 
         const val TORRENT_INFO_EXTRA = "org.evgem.android.bittorrentclient.service.TORRENT_INFO_EXTRA"
     }

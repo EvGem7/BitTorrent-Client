@@ -18,16 +18,9 @@ private const val ACCEPT_ENCODING = "gzip;q=1.0, deflate, identity"
 private const val ACCEPT = "*/*"
 private const val CONNECTION = "close"
 
-fun httpRequest(url: String, vararg params: Pair<String, ByteArray>): ByteArray? = httpRequest(
-    url,
-    ArrayList<Pair<String, ByteArray>>().apply {
-        for (param in params) {
-            add(param)
-        }
-    }
-)
-
 fun httpRequest(url: String, params: List<Pair<String, ByteArray>>): ByteArray? {
+    val zeroTime = System.currentTimeMillis()
+
     val host: String
     val path: String
     URL(url).let {
@@ -57,6 +50,10 @@ fun httpRequest(url: String, params: List<Pair<String, ByteArray>>): ByteArray? 
 
         val headerBuilder = StringBuilder()
         while (true) {
+            if (System.currentTimeMillis() - zeroTime > SOCKET_TIMEOUT) {
+                return null
+            }
+
             var c = input.read()
             headerBuilder.append(c.toChar())
             if (c == '\r'.toInt()) {

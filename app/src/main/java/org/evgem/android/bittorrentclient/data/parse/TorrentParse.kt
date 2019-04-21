@@ -9,11 +9,12 @@ import org.evgem.android.bittorrentclient.data.bencode.BValue
 import org.evgem.android.bittorrentclient.data.entity.TorrentInfo
 import org.evgem.android.bittorrentclient.data.entity.TorrentInfo.File
 import java.io.ByteArrayOutputStream
-import java.lang.StringBuilder
 import java.security.MessageDigest
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashSet
+
+private val messageDigest = MessageDigest.getInstance(HASH_ALGORITHM)
 
 fun getTorrentInfo(root: BMap): TorrentInfo? {
     val announces = HashSet<String>()
@@ -59,12 +60,7 @@ fun getTorrentInfo(root: BMap): TorrentInfo? {
         root.value["info"] ?: return null,
         infoEncoded
     )
-    val messageDigest = MessageDigest.getInstance(HASH_ALGORITHM)
     val infoHash = messageDigest.digest(infoEncoded.toByteArray())
-    if (infoHash.size != HASH_SIZE) {
-        Log.e(TAG, "WTF?? info hash has ${infoHash.size} size")
-        return null
-    }
 
     val name = info["name"]?.string?.let { String(it) } ?: return null
 

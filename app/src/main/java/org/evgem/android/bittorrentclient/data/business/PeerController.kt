@@ -1,14 +1,12 @@
 package org.evgem.android.bittorrentclient.data.business
 
 import android.util.Log
-import org.evgem.android.bittorrentclient.constants.HASH_ALGORITHM
 import org.evgem.android.bittorrentclient.constants.PEER_ID
 import org.evgem.android.bittorrentclient.data.entity.Peer
 import org.evgem.android.bittorrentclient.data.entity.TorrentInfo
 import org.evgem.android.bittorrentclient.data.network.PeerCommunicator
 import org.evgem.android.bittorrentclient.util.FixedBitSet
 import java.net.Socket
-import java.security.MessageDigest
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.LinkedBlockingQueue
@@ -25,25 +23,20 @@ class PeerController(private val master: MasterController, private val torrentIn
     private val pendingPeers = LinkedBlockingQueue<Peer>()
     private val pendingPeerSockets = LinkedBlockingQueue<Socket>()
 
-    private val piecesFreqs = Collections.synchronizedList(
-        ArrayList<Int>(torrentInfo.pieces.size).apply { repeat(torrentInfo.pieces.size) { add(0) } }
+    private val piecesAvailability = Collections.synchronizedList(
+        PiecesArrayList().apply {
+            repeat(torrentInfo.pieces.size) { add(0) }
+        }
     )
 
     private val providedPieces =
-        ConcurrentHashMap<Peer, FreqsArrayList>() // map peer to piece indexes that peer provides
+        ConcurrentHashMap<Peer, PiecesArrayList>() // map peer to piece indexes that peer provides
 
     private val downloadingPieces = ConcurrentHashMap<Peer, Piece>()
 
     private var loopThread: LoopThread? = null
 
     private val peerPriorities = ConcurrentHashMap<Peer, Int>()
-
-    private val lastPieceLength: Int
-
-    init {
-        val rest = (torrentInfo.totalSize % torrentInfo.pieceLength).toInt()
-        lastPieceLength = if (rest != 0) rest else torrentInfo.pieceLength
-    }
 
     var running: Boolean = false
         private set
@@ -52,6 +45,16 @@ class PeerController(private val master: MasterController, private val torrentIn
         fun requestPeers()
         fun onPieceReceived(piece: ByteArray, index: Int)
         val piecesStatus: BooleanArray
+        val isDownloaded: Boolean
+    }
+
+    fun reloadPiece(index: Int) {
+        if (communicators.isEmpty() || piecesAvailability[index] == 0) {
+            master.requestPeers()
+        }
+        if (loopThread?.isAlive != true) {
+            loopThread = LoopThread().apply { start() }
+        }
     }
 
     fun start() {
@@ -107,16 +110,16 @@ class PeerController(private val master: MasterController, private val torrentIn
     }
 
     fun addPeer(peer: Peer) {
-        if (running) {
-            synchronized(communicators) {
-                for (communicator in communicators) {
-                    if (communicator.peer?.ip == peer.ip &&
-                        communicator.peer?.port == peer.port
-                    ) {
-                        return
-                    }
+        synchronized(communicators) {
+            for (communicator in communicators) {
+                if (communicator.peer?.ip == peer.ip &&
+                    communicator.peer?.port == peer.port
+                ) {
+                    return
                 }
             }
+        }
+        if (running) {
             val communicator = initCommunicator()
             communicator.start(peer)
             communicators += communicator
@@ -146,47 +149,51 @@ class PeerController(private val master: MasterController, private val torrentIn
     }
 
     @Synchronized
-    private fun getPeerRequest(peer: Peer, provided: FreqsArrayList): PeerRequest? {
+    private fun getPeerRequest(peer: Peer, provided: PiecesArrayList): PeerRequest? {
         downloadingPieces[peer]?.let { piece ->
             return PeerRequest(piece.index, piece.got, getBlockLength(piece))
         }
 
+        val random = Random()
         val sorted = TreeSet<Int>(Comparator { i1, i2 ->
-            val diff = piecesFreqs[i1] - piecesFreqs[i2]
+            val diff = piecesAvailability[i1] - piecesAvailability[i2]
             when {
                 diff != 0 -> diff
-                Random().nextBoolean() -> 1
+                random.nextBoolean() -> 1
                 else -> -1
             }
         })
         provided.forEach { sorted.add(it) }
 
         for (pieceIndex in sorted) {
-            if (!master.piecesStatus[pieceIndex]) { // if not downloaded
-                val newPiece = Piece(pieceIndex)
-                val priority = peerPriorities[peer] ?: 0
-                var alreadyDownloading = false
+            if (master.piecesStatus[pieceIndex]) { // if downloaded
+                continue
+            }
+            val piece = Piece(pieceIndex)
+            val priority = peerPriorities[peer] ?: 0
+            var alreadyDownloading = false
 
-                //TODO now several different peer may download the same piece. fix it
-                for ((currentPeer, piece) in downloadingPieces) {
-                    if (piece.index == pieceIndex) {
-                        val currentPriority = peerPriorities[currentPeer] ?: 0
-                        if (currentPriority >= priority) {
-                            alreadyDownloading = true
-                            break
-                        } else {
-                            downloadingPieces.remove(currentPeer)
-                            newPiece.got = piece.got
-                            newPiece.data = piece.data
+            //TODO now several different peer may download the same piece. fix it
+            for ((currentPeer, currentPiece) in downloadingPieces) {
+                if (currentPiece.index == pieceIndex) {
+                    val currentPriority = peerPriorities[currentPeer] ?: 0
+                    if (currentPriority >= priority) {
+                        alreadyDownloading = true
+                        break
+                    } else {
+                        downloadingPieces.remove(currentPeer)
+                        if (currentPiece.got > piece.got) {
+                            piece.got = currentPiece.got
+                            piece.data = currentPiece.data
                         }
                     }
                 }
-                if (alreadyDownloading) {
-                    continue
-                }
-                downloadingPieces[peer] = newPiece
-                return PeerRequest(pieceIndex, newPiece.got, getBlockLength(newPiece))
             }
+            if (alreadyDownloading) {
+                continue
+            }
+            downloadingPieces[peer] = piece
+            return PeerRequest(pieceIndex, piece.got, getBlockLength(piece))
         }
         return null
     }
@@ -203,15 +210,9 @@ class PeerController(private val master: MasterController, private val torrentIn
         }
         data.copyInto(piece.data, offset)
         piece.got += data.size
-        
+
         if (piece.got == getPieceLength(index)) {
             downloadingPieces.remove(peer)
-
-            val pieceHash: ByteArray = MessageDigest.getInstance(HASH_ALGORITHM).digest(piece.data)
-            if (!pieceHash.contentEquals(torrentInfo.pieces[index])) {
-                Log.e(TAG, "Piece hash is not valid. index=$index; offset=$offset")
-                return
-            }
             master.onPieceReceived(piece.data, index)
         }
     }
@@ -225,7 +226,7 @@ class PeerController(private val master: MasterController, private val torrentIn
     private fun getPieceLength(index: Int) = if (index != torrentInfo.pieces.lastIndex) {
         torrentInfo.pieceLength
     } else {
-        lastPieceLength
+        torrentInfo.lastPieceLength
     }
 
     private fun initCommunicator() = PeerCommunicator().setOnConnectionFailed {
@@ -239,14 +240,14 @@ class PeerController(private val master: MasterController, private val torrentIn
             downloadingPieces.remove(peer)
             val provided = providedPieces.remove(peer) ?: return@let
             for (pieceIndex in provided) {
-                --piecesFreqs[pieceIndex]
+                --piecesAvailability[pieceIndex]
             }
             peerPriorities.remove(peer)
         }
     }.setOnHandshakeListener { _, infoHash, _ ->
         if (!infoHash.contentEquals(torrentInfo.infoHash)) {
             stop()
-            communicators.remove(this)
+            return@setOnHandshakeListener
         }
         val bitSet = FixedBitSet((torrentInfo.pieces.size + 7) / 8)
         for ((index, gotPiece) in master.piecesStatus.withIndex()) {
@@ -254,10 +255,10 @@ class PeerController(private val master: MasterController, private val torrentIn
         }
         bitfield(bitSet)
     }.setOnBitfieldListener { bitSet ->
-        val provided = FreqsArrayList()
-        for (i in 0 until piecesFreqs.size) {
+        val provided = PiecesArrayList()
+        for (i in 0 until piecesAvailability.size) {
             if (bitSet.bits[i]) {
-                ++piecesFreqs[i]
+                ++piecesAvailability[i]
                 provided += i
             }
         }
@@ -272,8 +273,10 @@ class PeerController(private val master: MasterController, private val torrentIn
                 interested()
                 if (peerChoking) {
                     setOnUnchokeListener {
-                        request(request.index, request.offset, request.length)
-                        setOnUnchokeListener(null)
+                        if (peer == this.peer) {
+                            request(request.index, request.offset, request.length)
+                            setOnUnchokeListener(null)
+                        }
                     }
                 } else {
                     request(request.index, request.offset, request.length)
@@ -281,7 +284,7 @@ class PeerController(private val master: MasterController, private val torrentIn
             }
         }
     }.setOnHaveListener { pieceIndex ->
-        ++piecesFreqs[pieceIndex]
+        ++piecesAvailability[pieceIndex]
         peer?.let { peer ->
             val provided = providedPieces[peer] ?: return@setOnHaveListener
             if (provided.find { pieceIndex == it } == null) {
@@ -291,7 +294,10 @@ class PeerController(private val master: MasterController, private val torrentIn
     }.setOnPieceListener { index, offset, data ->
         peer?.let { peer ->
             notifyBlockDownloaded(peer, index, offset, data)
-            getPeerRequest(peer)?.let { request -> request(request.index, request.offset, request.length) }
+            getPeerRequest(peer)?.let { request ->
+                // TODO add logic when we have been choked
+                request(request.index, request.offset, request.length)
+            }
         }
     }.setOnChokeListener {
         Log.d(TAG, "${peer?.ip} choke me")
@@ -309,16 +315,21 @@ class PeerController(private val master: MasterController, private val torrentIn
         var data: ByteArray = ByteArray(getPieceLength(index))
     )
 
-    private inner class FreqsArrayList : ArrayList<Int>(torrentInfo.pieces.size)
+    private inner class PiecesArrayList : ArrayList<Int>(torrentInfo.pieces.size)
 
     private inner class LoopThread : Thread("piece availability checker") {
         override fun run() {
             super.run()
             while (running) {
                 Thread.sleep(PIECE_AVAILABILITY_PERIOD)
-                synchronized(piecesFreqs) {
-                    for (freq in piecesFreqs) {
-                        if (freq == 0) {
+
+                if (master.isDownloaded) {
+                    return
+                }
+
+                synchronized(piecesAvailability) {
+                    for (availability in piecesAvailability) {
+                        if (availability == 0) {
                             master.requestPeers()
                             Log.i(TAG, "peers requested")
                             break
@@ -337,3 +348,6 @@ class PeerController(private val master: MasterController, private val torrentIn
         private const val PIECE_AVAILABILITY_PERIOD = 10_000L // 10 seconds
     }
 }
+
+// TODO optimization ideas:
+//
