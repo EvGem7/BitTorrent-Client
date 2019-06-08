@@ -1,9 +1,6 @@
 package org.evgem.android.bittorrentclient.data.database
 
-import android.arch.persistence.room.Dao
-import android.arch.persistence.room.Insert
-import android.arch.persistence.room.OnConflictStrategy
-import android.arch.persistence.room.Query
+import android.arch.persistence.room.*
 import org.evgem.android.bittorrentclient.data.entity.LoadingInfo
 
 @Dao
@@ -16,4 +13,7 @@ interface LoadingInfoDao {
 
     @Query("SELECT * FROM loading")
     fun getAll(): List<LoadingInfo>
+
+    @Delete
+    fun delete(loadingInfo: LoadingInfo)
 }

@@ -31,7 +31,7 @@ class DownloadUnitTest {
 
     @Test
     fun downloadTest() {
-        val file = File("/home/evgem/Downloads/Сивухин Д.В. - Общий курс физики (в 5 томах)) [2002-2005, DjVu, RUS] [rutracker-949410].torrent")
+        val file = File("/home/evgem/Downloads/test.torrent")
         FileInputStream(file).use {
             val metainfo = BDecoder.decode(it) as BMap
             val torrentInfo: TorrentInfo = getTorrentInfo(metainfo) ?: return
@@ -52,5 +52,6 @@ class DownloadUnitTest {
                 println("something went wrong :(")
             }
         }
+        Thread.sleep(5000)
     }
 }

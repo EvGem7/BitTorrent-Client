@@ -39,10 +39,15 @@ class LoadingController private constructor(
     var status: Status = Status.DOWNLOADING
         private set
 
-    enum class Status { DOWNLOADING, SEEDING, ERROR, STOPPED }
+    enum class Status(val value: String) {
+        DOWNLOADING("Downloading"),
+        SEEDING("Seeding"),
+        ERROR("Error"),
+        STOPPED("Stopped")
+    }
 
     interface Observer {
-        fun onDownloaded()
+        fun onDownloaded(controller: LoadingController)
     }
 
     fun start(): Boolean {
@@ -118,12 +123,14 @@ class LoadingController private constructor(
     override fun onFullyDownloaded() {
         trackerController.complete()
         status = Status.SEEDING
-        observer.onDownloaded()
+        observer.onDownloaded(this)
     }
 
     override fun notifyBadPiece(index: Int) {
         peerController.reloadPiece(index)
     }
+
+    override fun getPiece(index: Int): ByteArray? = pieceController.getPiece(index)
 
     override val acceptingPort: Int get() = peerAcceptor.port ?: 0
 

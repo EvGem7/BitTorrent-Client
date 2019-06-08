@@ -44,6 +44,7 @@ class PeerController(private val master: MasterController, private val torrentIn
     interface MasterController {
         fun requestPeers()
         fun onPieceReceived(piece: ByteArray, index: Int)
+        fun getPiece(index: Int): ByteArray?
         val piecesStatus: BooleanArray
         val isDownloaded: Boolean
     }
@@ -299,12 +300,16 @@ class PeerController(private val master: MasterController, private val torrentIn
                 request(request.index, request.offset, request.length)
             }
         }
-    }.setOnChokeListener {
-        Log.d(TAG, "${peer?.ip} choke me")
     }.setOnInterestedListener {
-        Log.d(TAG, "${peer?.ip} interested in me")
-    }.setOnUninterestedListener {
-        Log.d(TAG, "${peer?.ip} not interested in me")
+        unchoke()
+    }.setOnRequestListener { index, offset, length ->
+        master.getPiece(index)?.let {
+            if (offset >= it.size ||
+                offset + length > it.size) {
+                return@setOnRequestListener
+            }
+            piece(index, offset, it.sliceArray(offset until offset + length))
+        }
     }
 
     private data class PeerRequest(val index: Int, val offset: Int, val length: Int)
@@ -320,22 +325,27 @@ class PeerController(private val master: MasterController, private val torrentIn
     private inner class LoopThread : Thread("piece availability checker") {
         override fun run() {
             super.run()
-            while (running) {
-                Thread.sleep(PIECE_AVAILABILITY_PERIOD)
+            try {
+                while (running) {
+                    Thread.sleep(PIECE_AVAILABILITY_PERIOD)
 
-                if (master.isDownloaded) {
-                    return
-                }
+                    if (master.isDownloaded) {
+                        return
+                    }
 
-                synchronized(piecesAvailability) {
-                    for (availability in piecesAvailability) {
-                        if (availability == 0) {
-                            master.requestPeers()
-                            Log.i(TAG, "peers requested")
-                            break
+                    synchronized(piecesAvailability) {
+                        for (availability in piecesAvailability) {
+                            if (availability == 0) {
+                                master.requestPeers()
+                                Log.i(TAG, "peers requested")
+                                break
+                            }
                         }
                     }
                 }
+            } catch (ignored: InterruptedException) {}
+            catch (e: Exception) {
+                Log.e(TAG, Log.getStackTraceString(e))
             }
         }
     }

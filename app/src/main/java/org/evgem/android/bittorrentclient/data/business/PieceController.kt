@@ -28,7 +28,7 @@ class PieceController(
 
     val left: Long get() = torrentInfo.totalSize - downloaded
 
-    val pool = Executors.newFixedThreadPool(1)
+    private val pool = Executors.newFixedThreadPool(1)
 
     init {
         for (file in torrentInfo.files) {
@@ -76,13 +76,13 @@ class PieceController(
             for (file in files) {
                 if (offset < file.length()) {
                     file.seek(offset)
-                    val toFill = file.length() - offset
-                    if ((data.size - written) <= toFill) {
+                    val rest = file.length() - offset
+                    if ((data.size - written) <= rest) {
                         file.write(data, written, data.size - written)
                         break
                     } else {
-                        file.write(data, written, toFill.toInt())
-                        written += toFill.toInt()
+                        file.write(data, written, rest.toInt())
+                        written += rest.toInt()
                         offset = 0
                     }
                 } else {
@@ -96,6 +96,38 @@ class PieceController(
                 pool.shutdown()
             }
         }
+    }
+
+    fun getPiece(index: Int): ByteArray? {
+        if (!piecesStatus[index]) {
+            return null
+        }
+        val length = if (index != torrentInfo.pieces.lastIndex) {
+            torrentInfo.pieceLength
+        } else {
+            torrentInfo.lastPieceLength
+        }
+
+        val result = ByteArray(length)
+        var offset = index.toLong() * torrentInfo.pieceLength
+        var read = 0
+        for (file in files) {
+            if (offset < file.length()) {
+                file.seek(offset)
+                val rest = file.length() - offset
+                if ((length - read) <= rest) {
+                    file.read(result, read, length - read)
+                    break
+                } else {
+                    file.read(result, read, rest.toInt())
+                    read += rest.toInt()
+                    offset = 0
+                }
+            } else {
+                offset -= file.length()
+            }
+        }
+        return result
     }
 
     companion object {

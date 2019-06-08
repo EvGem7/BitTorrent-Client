@@ -1,5 +1,7 @@
 package org.evgem.android.bittorrentclient.data.entity
 
+import org.evgem.android.bittorrentclient.data.business.LoadingController
+import org.evgem.android.bittorrentclient.service.LoadingService
 import java.math.BigDecimal
 import java.math.MathContext
 
@@ -14,8 +16,7 @@ data class Loading(
     val upSpeed: String,
     val size: String,
     val eta: String,
-    val peersCount: Int,
-    val seedsCount: Int
+    val controller: LoadingService.ControllerWrapper
 ) {
     init {
         progress = BigDecimal(progress.toDouble()).round(MathContext(3)).toFloat()

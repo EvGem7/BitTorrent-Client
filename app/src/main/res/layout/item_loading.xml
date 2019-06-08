@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <data>
+
         <variable
             name="loading"
             type="org.evgem.android.bittorrentclient.data.entity.Loading" />
@@ -13,6 +14,39 @@
     <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:id="@+id/linearLayout3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginRight="8dp"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/loading_progress"
+            app:layout_constraintTop_toBottomOf="@+id/linearLayout2">
+
+            <TextView
+                android:id="@+id/loading_down_speed"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="4dp"
+                android:layout_weight="1"
+                android:text="@{loading.downSpeed}"
+                tools:text="Download speed" />
+
+            <TextView
+                android:id="@+id/loading_up_speed"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="4dp"
+                android:layout_weight="1"
+                android:text="@{loading.upSpeed}"
+                tools:text="Upload speed" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/loading_name"
@@ -52,7 +86,8 @@
                 android:layout_marginRight="4dp"
                 android:layout_weight="1"
                 android:maxLines="1"
-                android:text="@{String.format(@string/eta, loading.eta)}" />
+                android:text="@{String.format(@string/eta, loading.eta)}"
+                tools:text="ETA" />
 
             <TextView
                 android:id="@+id/loading_status"
@@ -94,7 +129,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toEndOf="@+id/loading_progress"
-            app:layout_constraintTop_toBottomOf="@+id/linearLayout2"
+            app:layout_constraintTop_toBottomOf="@+id/linearLayout3"
             app:srcCompat="@drawable/ic_resume" />
 
         <ImageButton
@@ -106,20 +141,8 @@
             android:layout_marginLeft="8dp"
             android:layout_marginTop="8dp"
             app:layout_constraintStart_toEndOf="@+id/loading_resume"
-            app:layout_constraintTop_toBottomOf="@+id/linearLayout2"
+            app:layout_constraintTop_toBottomOf="@+id/linearLayout3"
             app:srcCompat="@drawable/ic_pause" />
-
-        <ImageButton
-            android:id="@+id/loading_stop"
-            style="@style/LoadingHandleButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginLeft="8dp"
-            android:layout_marginTop="8dp"
-            app:layout_constraintStart_toEndOf="@+id/loading_pause"
-            app:layout_constraintTop_toBottomOf="@+id/linearLayout2"
-            app:srcCompat="@drawable/ic_stop" />
 
         <ImageButton
             android:id="@+id/loading_cancel"
@@ -129,8 +152,8 @@
             android:layout_marginStart="8dp"
             android:layout_marginLeft="8dp"
             android:layout_marginTop="8dp"
-            app:layout_constraintStart_toEndOf="@+id/loading_stop"
-            app:layout_constraintTop_toBottomOf="@+id/linearLayout2"
+            app:layout_constraintStart_toEndOf="@+id/loading_pause"
+            app:layout_constraintTop_toBottomOf="@+id/linearLayout3"
             app:srcCompat="@drawable/ic_cancel" />
     </android.support.constraint.ConstraintLayout>
 </layout>
